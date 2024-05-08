@@ -92,7 +92,8 @@ fs::path batched_file_sink_impl::make_file_path(const fs::path& parent_dir, cons
 
     std::stringstream dir_ss, file_ss;
     dir_ss << std::put_time(&tm, "%Y/%m/%d");
-    file_ss << std::put_time(&tm, "%Y%m%dT%H%M%S") << "_" << tag << ".bin";
+    // artificially impose ms precision
+    file_ss << std::put_time(&tm, "%Y%m%dT%H%M%S") << "000000" << "_" << tag << ".bin";
 
     fs::path dir_path = parent_dir / dir_ss.str();
     if (!fs::exists(dir_path)) {
