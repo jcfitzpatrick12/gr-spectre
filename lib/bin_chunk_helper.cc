@@ -1,4 +1,4 @@
-#include "bin_chunk_helper.h"
+#include "gnuradio/spectre/bin_chunk_helper.h"
 
 namespace gr 
 {

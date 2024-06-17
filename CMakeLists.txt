@@ -122,7 +122,6 @@ add_custom_target(uninstall
 # Add subdirectories
 ########################################################################
 add_subdirectory(include/gnuradio/spectre)
-add_subdirectory(include/utilities)
 add_subdirectory(lib)
 add_subdirectory(apps)
 add_subdirectory(docs)
@@ -149,4 +148,3 @@ configure_package_config_file(
     ${CMAKE_CURRENT_BINARY_DIR}/cmake/Modules/${target}Config.cmake
     INSTALL_DESTINATION ${GR_CMAKE_DIR}
 )
-

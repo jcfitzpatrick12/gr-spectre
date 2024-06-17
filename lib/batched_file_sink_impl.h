@@ -9,7 +9,7 @@
 #define INCLUDED_SPECTRE_BATCHED_FILE_SINK_IMPL_H
 
 #include <gnuradio/spectre/batched_file_sink.h>
-#include <utilities/bin_chunk_helper.h>
+#include <gnuradio/spectre/bin_chunk_helper.h>
 
 namespace fs = std::filesystem;
 

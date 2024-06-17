@@ -11,5 +11,6 @@
 ########################################################################
 install(FILES
     api.h
+    bin_chunk_helper.h
     batched_file_sink.h DESTINATION include/gnuradio/spectre
 )

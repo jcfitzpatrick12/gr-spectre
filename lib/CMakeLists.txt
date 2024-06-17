@@ -11,7 +11,9 @@
 ########################################################################
 include(GrPlatform) #define LIB_SUFFIX
 list(APPEND spectre_sources
-    batched_file_sink_impl.cc )
+    batched_file_sink_impl.cc
+    bin_chunk_helper.cc  # Added the new helper source file
+)
 
 set(spectre_sources "${spectre_sources}" PARENT_SCOPE)
 if(NOT spectre_sources)
@@ -24,7 +26,7 @@ target_link_libraries(gnuradio-spectre gnuradio::gnuradio-runtime)
 target_include_directories(gnuradio-spectre
     PUBLIC $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/../include>
     PUBLIC $<INSTALL_INTERFACE:include>
-  )
+)
 set_target_properties(gnuradio-spectre PROPERTIES DEFINE_SYMBOL "gnuradio_spectre_EXPORTS")
 
 if(APPLE)
