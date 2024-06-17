@@ -6,9 +6,7 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
 #
 
-########################################################################
-# Install public header files
-########################################################################
 install(FILES
-    bin_chunk_helper.h DESTINATION include/utilities
+    bin_chunk_helper.h 
+    bin_chunk_helper.cc DESTINATION include/utilities
 )
