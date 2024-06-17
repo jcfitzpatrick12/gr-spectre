@@ -122,6 +122,7 @@ add_custom_target(uninstall
 # Add subdirectories
 ########################################################################
 add_subdirectory(include/gnuradio/spectre)
+add_subdirectory(include/utilities)
 add_subdirectory(lib)
 add_subdirectory(apps)
 add_subdirectory(docs)
