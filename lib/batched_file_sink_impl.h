@@ -9,9 +9,7 @@
 #define INCLUDED_SPECTRE_BATCHED_FILE_SINK_IMPL_H
 
 #include <gnuradio/spectre/batched_file_sink.h>
-#include <iostream>
-#include <fstream>
-#include <filesystem>
+#include <utilities/bin_chunk_helpers.h>
 
 namespace fs = std::filesystem;
 
@@ -21,28 +19,35 @@ namespace spectre {
 class batched_file_sink_impl : public batched_file_sink
 {
 private:
-    std::string _parent_dir; // the directory where the files will be stored
-    std::string _tag; // file names will be [start time of collection]_[tag].bin
-    std::ofstream _file; // file object to open close and write the data
-    int _chunk_size; // each file will contain chunk_size [s] of data
-    int _samp_rate; // the sample rate [used to determine time elapsed]
-    bool _open_new_file; // bool to keep track of whether to open a new file or not
-    double _elapsed_time; // float to keep track of the elapsed time 
+    std::string _parent_dir; /**< Defines the absolute path to the parent directory to hold the batched files. */
+    std::string _tag; /**< File names are tagged with this string. */
+    int _chunk_size; /**< The (temporal) size of each batched file. */
+    int _samp_rate; /**< The sample rate used to collect the incoming data stream. */
+    std::ofstream _file; /**<  define a ofstream class to handle file opening and read write operations */
+    bool _open_new_file; /**< Private attribute to determine whether a new file should be opened at each call of the work function */
+    float _elapsed_time; /**< Elapsed time since the file opening for that batch */
+    bin_chunk_helper _bch; /**< class which handles the binary chunk file metadata */
 
 public:
-    batched_file_sink_impl(std::string parent_dir,
-                           std::string tag,
-                           int chunk_size,
-                           int samp_rate);
+    batched_file_sink_impl(
+        std::string parent_dir,
+        std::string tag,
+        int chunk_size,
+        int samp_rate
+    );
+
     ~batched_file_sink_impl();
 
-    void open_file();
-    fs::path make_file_path(const fs::path& parent_dir, const std::string& tag);
-
-    // Where all the action really happens
-    int work(int noutput_items,
-             gr_vector_const_void_star& input_items,
-             gr_vector_void_star& output_items);
+    /**
+    * @brief Opens a new batched binary file.
+    */
+    void open_file(); 
+    
+    int work(
+        int noutput_items,
+        gr_vector_const_void_star& input_items,
+        gr_vector_void_star& output_ite
+    );
 };
 
 } // namespace spectre
