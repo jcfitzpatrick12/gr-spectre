@@ -1,10 +1,6 @@
 #ifndef INCLUDED_BIN_CHUNK_UTILS_H
 #define INCLUDED_BUN_CHUNK_UTILS_H
-/* 
-a class to handle time utilities 
--> (current system time to ms precision)
--> (make a file path based on current system time)
-*/
+
 #include <iostream>
 #include <fstream>
 #include <filesystem>
