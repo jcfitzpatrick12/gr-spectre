@@ -1,4 +1,4 @@
-#include "bin_chunk_helpers.h"
+#include "bin_chunk_helper.h"
 
 namespace gr 
 {
