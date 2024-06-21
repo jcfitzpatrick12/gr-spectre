@@ -6,6 +6,14 @@ templates:
   imports: from gnuradio import spectre
   make: spectre.sweep_driver(${min_freq}, ${max_freq}, ${freq_step}, ${samp_rate}, ${samples_per_step})
 
+- id: showports
+  label: Show Message Port
+  dtype: bool
+  default: 'True'
+  options: ['False', 'True']
+  option_labels: [No, Yes]
+  hide: part
+  
 parameters:
   - id: min_freq
     label: Minimum frequency [Hz]
@@ -31,5 +39,10 @@ parameters:
 outputs:
 - label: out0
   dtype: float
+
+- domain: message
+  id: freq 
+  optional: true
+  hide: ${not showports}
 
 file_format: 1

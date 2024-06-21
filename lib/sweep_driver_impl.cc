@@ -39,7 +39,9 @@ sweep_driver_impl::sweep_driver_impl(
     _sample_counter(0),
     _freq0(compute_freq0()),
     _current_freq(_freq0)
-{
+{   
+    // declare message port
+    message_port_register_out(pmt::mp("freq"));
 }
 
 /*
@@ -52,6 +54,10 @@ float sweep_driver_impl::compute_freq0() {
     return (_min_freq + _samp_rate/2);
 }
 
+void sweep_driver_impl::publish_current_freq() {
+    pmt::pmt_t msg = pmt::from_double(_current_freq);
+    message_port_pub(pmt::mp("freq"), msg);
+}
 
 int sweep_driver_impl::work(int noutput_items,
                             gr_vector_const_void_star& input_items,
@@ -62,8 +68,12 @@ int sweep_driver_impl::work(int noutput_items,
     // let's say the noutput_items <= _samples_per_step
     int k = 0;
     while (k < noutput_items) {
+        if (_sample_counter == 0) {
+            // since we have incremented the frequency, publish it to the port.
+            publish_current_freq();
+        }
         // if the sample counter has surpassed the max samples per step, reset the counter and increment the frequency
-        if (_sample_counter >= _samples_per_step) {
+        else if (_sample_counter >= _samples_per_step) {
             _sample_counter = 0;
             _current_freq += _freq_step;
             // if the incremented frequency is larger than the max frequency, reset the sweep

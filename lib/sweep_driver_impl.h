@@ -32,7 +32,7 @@ public:
                       int samp_rate,
                       int samples_per_step);
     ~sweep_driver_impl();
-
+    void publish_current_freq();
     float compute_freq0(); /**< Compute the initial frequency based on constructor inputs. */
     // Where all the action really happens
     int work(int noutput_items,
