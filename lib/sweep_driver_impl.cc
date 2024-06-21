@@ -57,8 +57,10 @@ float sweep_driver_impl::compute_freq0() {
 }
 
 void sweep_driver_impl::publish_current_freq() {
-    pmt::pmt_t msg = pmt::from_float(_current_freq);
-    message_port_pub(pmt::mp("freq"), msg);
+    pmt::pmt_t key = pmt::intern("freq");  // Key
+    pmt::pmt_t value = pmt::from_double(_current_freq);  // Value as double
+    pmt::pmt_t msg = pmt::cons(key, value);  // Create pair
+    message_port_pub(pmt::mp("freq"), msg);  // Publish the message
 }
 
 int sweep_driver_impl::work(int noutput_items,
