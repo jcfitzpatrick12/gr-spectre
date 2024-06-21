@@ -11,8 +11,9 @@
 namespace gr {
 namespace spectre {
 
-#pragma message("set the following appropriately and remove this warning")
 using input_type = float;
+using output_type = float;
+
 sweep_driver::sptr sweep_driver::make(
     float min_freq, float max_freq, float freq_step, int samp_rate, int samples_per_step)
 {
@@ -28,8 +29,8 @@ sweep_driver_impl::sweep_driver_impl(
     float min_freq, float max_freq, float freq_step, int samp_rate, int samples_per_step)
     : gr::sync_block("sweep_driver",
                      gr::io_signature::make(
-                         1 /* min inputs */, 1 /* max inputs */, sizeof(input_type)),
-                     gr::io_signature::make(0, 0, 0)),
+                         0, 0, 0),
+                     gr::io_signature::make(1, 1, sizeof(output_type))),
     _min_freq(min_freq),
     _max_freq(max_freq),
     _freq_step(freq_step),
