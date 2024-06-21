@@ -65,22 +65,23 @@ int sweep_driver_impl::work(int noutput_items,
 {
     // cast the (only) output port as a pointer to a float
     float* optr = static_cast<float*>(output_items[0]);
+
+    // before we start iterating, publish the current active center frequency
+    publish_current_freq();
+
     // let's say the noutput_items <= _samples_per_step
     int k = 0;
     while (k < noutput_items) {
-        if (_sample_counter == 0) {
-            // since we have incremented the frequency, publish it to the port.
-            publish_current_freq();
-        }
         // if the sample counter has surpassed the max samples per step, reset the counter and increment the frequency
-        else if (_sample_counter >= _samples_per_step) {
+        if (_sample_counter >= _samples_per_step) {
             _sample_counter = 0;
             _current_freq += _freq_step;
             // if the incremented frequency is larger than the max frequency, reset the sweep
             if (_current_freq > _max_freq) {
                 _current_freq = _freq0;
             }
-            // PLACEHOLDER: WHEN WE UPDATE THE FREQUENCY PUBLISH A MESSAGE TO THE PORT
+            // and publish the current tuning frequency
+            publish_current_freq();
         }
         else {
             // output the current frequency
