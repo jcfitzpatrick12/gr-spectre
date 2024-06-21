@@ -42,6 +42,8 @@ sweep_driver_impl::sweep_driver_impl(
 {   
     // declare message port
     message_port_register_out(pmt::mp("freq"));
+    // and publish the (initial) current tuning frequency
+    publish_current_freq();
 }
 
 /*
@@ -65,9 +67,6 @@ int sweep_driver_impl::work(int noutput_items,
 {
     // cast the (only) output port as a pointer to a float
     float* optr = static_cast<float*>(output_items[0]);
-
-    // before we start iterating, publish the current active center frequency
-    publish_current_freq();
 
     // let's say the noutput_items <= _samples_per_step
     int k = 0;
