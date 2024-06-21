@@ -29,7 +29,15 @@ sweep_driver_impl::sweep_driver_impl(
     : gr::sync_block("sweep_driver",
                      gr::io_signature::make(
                          1 /* min inputs */, 1 /* max inputs */, sizeof(input_type)),
-                     gr::io_signature::make(0, 0, 0))
+                     gr::io_signature::make(0, 0, 0)),
+    _min_freq(min_freq),
+    _max_freq(max_freq),
+    _freq_step(freq_step),
+    _samp_rate(samp_rate),
+    _samples_per_step(samples_per_step),
+    _sample_counter(0),
+    _freq0(compute_freq0()),
+    _current_freq(_freq0)
 {
 }
 
@@ -38,18 +46,42 @@ sweep_driver_impl::sweep_driver_impl(
  */
 sweep_driver_impl::~sweep_driver_impl() {}
 
+
+float sweep_driver_impl::compute_freq0() {
+    return (_min_freq + _samp_rate/2);
+}
+
+
 int sweep_driver_impl::work(int noutput_items,
                             gr_vector_const_void_star& input_items,
                             gr_vector_void_star& output_items)
 {
-    auto in = static_cast<const input_type*>(input_items[0]);
-
-#pragma message("Implement the signal processing in your block and remove this warning")
-    // Do <+signal processing+>
-
-    // Tell runtime system how many output items we produced.
+    // cast the (only) output port as a pointer to a float
+    float* optr = static_cast<float*>(output_items[0]);
+    // let's say the noutput_items <= _samples_per_step
+    int k = 0;
+    while (k < noutput_items) {
+        // if the sample counter has surpassed the max samples per step, reset the counter and increment the frequency
+        if (_sample_counter >= _samples_per_step) {
+            _sample_counter = 0;
+            _current_freq += _freq_step;
+            // if the incremented frequency is larger than the max frequency, reset the sweep
+            if (_current_freq > _max_freq) {
+                _current_freq = _freq0;
+            }
+            // PLACEHOLDER: WHEN WE UPDATE THE FREQUENCY PUBLISH A MESSAGE TO THE PORT
+        }
+        else {
+            // output the current frequency
+            optr[k] = _current_freq;
+            // increment the sample frequency
+            _sample_counter += 1;
+            // increment the global sample counter
+            k += 1;
+        }
+    }
     return noutput_items;
-}
+    }
 
 } /* namespace spectre */
 } /* namespace gr */
