@@ -37,6 +37,7 @@ parameters:
 
 outputs:
   - label: out0
+    domain: stream
     dtype: float
   - domain: message
     id: freq 
