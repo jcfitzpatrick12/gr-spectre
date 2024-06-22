@@ -1,5 +1,5 @@
-id: spectre_sweep_driver
-label: Sweep Driver
+id: synced_spectre_sweep_driver
+label: Synced Sweep Driver
 category: '[spectre]'
 
 templates:
