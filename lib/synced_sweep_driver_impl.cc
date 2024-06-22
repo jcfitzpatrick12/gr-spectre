@@ -26,7 +26,7 @@ synced_sweep_driver::sptr synced_sweep_driver::make(
  */
 synced_sweep_driver_impl::synced_sweep_driver_impl(
     float min_freq, float max_freq, float freq_step, int samp_rate, int samples_per_step)
-    : gr::sync_block("sweep_driver",
+    : gr::sync_block("synced_sweep_driver",
                      gr::io_signature::make(
                          1, 1, sizeof(input_type)),
                      gr::io_signature::make(1, 1, sizeof(output_type))),
