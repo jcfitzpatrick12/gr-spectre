@@ -1,0 +1,54 @@
+id: spectre_sweep_driver
+label: Sweep Driver
+category: '[spectre]'
+
+templates:
+  imports: from gnuradio import spectre
+  make: spectre.sweep_driver(${min_freq}, ${max_freq}, ${freq_step}, ${samp_rate}, ${samples_per_step})
+  
+parameters:
+  - id: min_freq
+    label: Minimum frequency [Hz]
+    dtype: float
+    default: 10000000
+  - id: max_freq
+    label: Maximum frequency [Hz]
+    dtype: float
+    default: 100000000
+  - id: freq_step
+    label: Frequency step [Hz]
+    dtype: float
+    default: 300000
+  - id: samp_rate
+    label: Sample rate [samples/s]
+    dtype: int
+    default: 300000
+  - id: samples_per_step
+    label: Samples per step [/s]
+    dtype: int
+    default: 512
+  - id: showports
+    label: Show Message Port
+    dtype: bool
+    default: 'True'
+    options: ['False', 'True']
+    option_labels: [No, Yes]
+    hide: part
+
+
+inputs:
+  - label: in0
+    domain: stream
+    dtype: complex
+
+outputs:
+  - label: out0
+    domain: stream
+    dtype: float
+  - domain: message
+    id: freq 
+    optional: true
+    hide: ${not showports}
+
+file_format: 1
+

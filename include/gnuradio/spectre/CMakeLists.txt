@@ -13,5 +13,6 @@ install(FILES
     api.h
     bin_chunk_helper.h
     batched_file_sink.h
-    sweep_driver.h DESTINATION include/gnuradio/spectre
+    sweep_driver.h
+    synced_sweep_driver.h DESTINATION include/gnuradio/spectre
 )
