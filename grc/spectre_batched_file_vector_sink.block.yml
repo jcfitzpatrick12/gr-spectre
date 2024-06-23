@@ -30,5 +30,6 @@ inputs:
   - label: in0
     domain: stream
     dtype: float
+    vlen: ${ vlen }
 
 file_format: 1
