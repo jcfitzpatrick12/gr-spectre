@@ -37,7 +37,7 @@ parameters:
 
 inputs:
   - domain: stream
-    dtype: gr_complex
+    dtype: complex
     vlen: 1
 
 outputs:
