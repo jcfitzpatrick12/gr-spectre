@@ -11,9 +11,8 @@
 namespace gr {
 namespace spectre {
 
-using input_type = float;
-using output_type = float;
-
+using input_type = gr_complex;
+using output_type = std::vector<float>;
 sweep_driver::sptr sweep_driver::make(
     float min_freq, float max_freq, float freq_step, int samp_rate, int samples_per_step)
 {
@@ -27,9 +26,9 @@ sweep_driver::sptr sweep_driver::make(
  */
 sweep_driver_impl::sweep_driver_impl(
     float min_freq, float max_freq, float freq_step, int samp_rate, int samples_per_step)
-    : gr::sync_block("sweep_driver",
+    : gr::sync_block("synced_sweep_driver",
                      gr::io_signature::make(
-                         0, 0, 0),
+                         1, 1, sizeof(input_type)),
                      gr::io_signature::make(1, 1, sizeof(output_type))),
     _min_freq(min_freq),
     _max_freq(max_freq),
@@ -45,16 +44,15 @@ sweep_driver_impl::sweep_driver_impl(
     // and publish the (initial) current tuning frequency
     publish_current_freq();
 }
-
 /*
  * Our virtual destructor.
  */
 sweep_driver_impl::~sweep_driver_impl() {}
 
-
 float sweep_driver_impl::compute_freq0() {
     return (_min_freq + _samp_rate/2);
 }
+
 
 void sweep_driver_impl::publish_current_freq() {
     pmt::pmt_t key = pmt::intern("freq");  // Key
@@ -67,8 +65,11 @@ int sweep_driver_impl::work(int noutput_items,
                             gr_vector_const_void_star& input_items,
                             gr_vector_void_star& output_items)
 {
-    // cast the (only) output port as a pointer to a float
-    float* optr = static_cast<float*>(output_items[0]);
+    // tell the work function that the pointer corresponding to the first (and only) port
+    // is pointing to a variable of type gr_complex (std::complex<float>)
+    const input_type* in0 = static_cast<const input_type*>(input_items[0]);
+    // cast the (only) output port as a pointer to a vector
+    output_type* optr = static_cast<output_type*>(output_items[0]);
 
     // let's say the noutput_items <= _samples_per_step
     int k = 0;
@@ -84,9 +85,12 @@ int sweep_driver_impl::work(int noutput_items,
             // and publish the current tuning frequency
             publish_current_freq();
         }
-        else {
-            // output the current frequency
-            optr[k] = _current_freq;
+        else { 
+            // fetch the real and imaginary components of the kth IQ_sample
+            float real_IQ_sample = in0[k].real();
+            float im_IQ_sample = in0[k].imag();
+            // and package with the current center frequency, constructing the output vector
+            optr[k] = {_current_freq, real_IQ_sample, im_IQ_sample};
             // increment the sample frequency
             _sample_counter += 1;
             // increment the global sample counter
@@ -94,7 +98,6 @@ int sweep_driver_impl::work(int noutput_items,
         }
     }
     return noutput_items;
-    }
-
+}
 } /* namespace spectre */
 } /* namespace gr */

@@ -12,7 +12,7 @@ namespace gr {
 namespace spectre {
 
 using input_type = gr_complex;
-using output_type = float;
+using output_type = std::vector<float>;
 synced_sweep_driver::sptr synced_sweep_driver::make(
     float min_freq, float max_freq, float freq_step, int samp_rate, int samples_per_step)
 {

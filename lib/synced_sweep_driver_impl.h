@@ -27,10 +27,10 @@ private:
 
 public:
     synced_sweep_driver_impl(float min_freq,
-                      float max_freq,
-                      float freq_step,
-                      int samp_rate,
-                      int samples_per_step);
+                             float max_freq,
+                             float freq_step,
+                             int samp_rate,
+                             int samples_per_step);
     ~synced_sweep_driver_impl();
     void publish_current_freq();
     float compute_freq0(); /**< Compute the initial frequency based on constructor inputs. */

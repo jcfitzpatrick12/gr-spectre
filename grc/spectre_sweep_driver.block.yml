@@ -5,28 +5,28 @@ category: '[spectre]'
 templates:
   imports: from gnuradio import spectre
   make: spectre.sweep_driver(${min_freq}, ${max_freq}, ${freq_step}, ${samp_rate}, ${samples_per_step})
-  
+
 parameters:
   - id: min_freq
     label: Minimum frequency [Hz]
     dtype: float
-    default: 10000000
+    default: 40000000
   - id: max_freq
     label: Maximum frequency [Hz]
     dtype: float
-    default: 100000000
+    default: 80000000
   - id: freq_step
     label: Frequency step [Hz]
     dtype: float
-    default: 300000
+    default: 4000000
   - id: samp_rate
     label: Sample rate [samples/s]
     dtype: int
-    default: 300000
+    default: 4000000
   - id: samples_per_step
     label: Samples per step [/s]
     dtype: int
-    default: 512
+    default: 4000000
   - id: showports
     label: Show Message Port
     dtype: bool
@@ -35,12 +35,17 @@ parameters:
     option_labels: [No, Yes]
     hide: part
 
+inputs:
+  - domain: stream
+    dtype: gr_complex
+    vlen: 1
+
 outputs:
-  - label: out0
-    domain: stream
+  - domain: stream
     dtype: float
+    vlen: 3
   - domain: message
-    id: freq 
+    id: freq
     optional: true
     hide: ${not showports}
 
