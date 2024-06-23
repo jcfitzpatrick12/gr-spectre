@@ -1,0 +1,34 @@
+id: spectre_batched_file_vector_sink
+label: Batched File Vector Sink
+category: '[spectre]'
+
+templates:
+  imports: from gnuradio import spectre
+  make: spectre.batched_file_vector_sink(${parent_dir}, ${tag}, ${chunk_size}, ${samp_rate}, ${vlen})
+
+parameters:
+  - id: parent_dir
+    label: Parent directory
+    dtype: string
+  - id: tag
+    label: Tag
+    dtype: string
+  - id: chunk_size
+    label: Chunk size [s]
+    dtype: int
+    default: 5
+  - id: samp_rate
+    label: Sample rate [samples/s]
+    dtype: int
+    default: 32000
+  - id: vlen
+    label: vlen
+    dtype: int
+    default: 2
+
+inputs:
+  - label: in0
+    domain: stream
+    dtype: float
+
+file_format: 1

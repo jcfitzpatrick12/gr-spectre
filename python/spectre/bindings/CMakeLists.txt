@@ -29,7 +29,8 @@ include(GrPybind)
 ########################################################################
 list(APPEND spectre_python_files
     batched_file_sink_python.cc
-    sweep_driver_python.cc python_bindings.cc)
+    sweep_driver_python.cc
+    batched_file_vector_sink_python.cc python_bindings.cc)
 
 GR_PYBIND_MAKE_OOT(spectre
    ../../..
