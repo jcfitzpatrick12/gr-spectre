@@ -13,7 +13,6 @@ include(GrPlatform) #define LIB_SUFFIX
 list(APPEND spectre_sources
     batched_file_sink_impl.cc
     bin_chunk_helper.cc  # Added the new helper source file
-    synced_sweep_driver_impl.cc
     sweep_driver_impl.cc
 )
 
