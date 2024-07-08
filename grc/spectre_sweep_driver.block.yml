@@ -24,7 +24,7 @@ parameters:
     dtype: int
     default: 4000000
   - id: samples_per_step
-    label: Samples per step [/s]
+    label: Samples per step
     dtype: int
     default: 4000000
   - id: showports
