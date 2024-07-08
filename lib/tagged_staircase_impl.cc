@@ -46,7 +46,7 @@ tagged_staircase_impl::tagged_staircase_impl(int min_samples_per_step,
       _min_modelled_frequency(static_cast<float>(samp_rate) / 2.0f),
       _current_modelled_frequency(static_cast<float>(samp_rate) / 2.0f)
 {
-    // tag_step(0);
+    tag_step(0);
 }
 
 /*
@@ -55,14 +55,14 @@ tagged_staircase_impl::tagged_staircase_impl(int min_samples_per_step,
 tagged_staircase_impl::~tagged_staircase_impl() {}
 
 
-// void tagged_staircase_impl::tag_step(int sample_index) {
-//     // Add a tag to the first sample of the new step
-//     const uint64_t absolute_offset = nitems_written(0) + sample_index;
-//     const pmt::pmt_t key = pmt::intern("freq");
-//     const pmt::pmt_t value = pmt::from_float(_current_modelled_frequency);
-//     const pmt::pmt_t srcid = pmt::string_to_symbol(alias());
-//     add_item_tag(0, absolute_offset, key, value, srcid);
-// }
+void tagged_staircase_impl::tag_step(int sample_index) {
+    // Add a tag to the first sample of the new step
+    const uint64_t absolute_offset = nitems_written(0) + sample_index;
+    const pmt::pmt_t key = pmt::intern("freq");
+    const pmt::pmt_t value = pmt::from_float(_current_modelled_frequency);
+    const pmt::pmt_t srcid = pmt::string_to_symbol(alias());
+    add_item_tag(0, absolute_offset, key, value, srcid);
+}
 
 
 int tagged_staircase_impl::work(int noutput_items,
@@ -83,7 +83,7 @@ int tagged_staircase_impl::work(int noutput_items,
         // Check if the current step is complete
         if (_sample_counter >= _current_samples_per_step) {
             // tag the first sample of the new step
-            // tag_step(i);
+            tag_step(i);
             // Move to the next step, reset the sample counter
             _sample_counter = 0;
             // increment the step counter
