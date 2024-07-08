@@ -43,7 +43,7 @@ inputs:
 outputs:
   - domain: stream
     dtype: float
-    vlen: 
+    vlen: 3
   - domain: message
     id: freq
     optional: true
