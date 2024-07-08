@@ -16,16 +16,16 @@ namespace spectre {
 class tagged_staircase_impl : public tagged_staircase
 {
 private:
-    int _min_samples_per_step; /**< user input*/
-    int _max_samples_per_step; /**< user input*/
-    int _step_increment; /**< user input*/
-    int _samp_rate; /**< user input*/
-    int _sample_counter; /**< keeps track of the index within a step*/
-    int _step_counter; /**< keeps track of the step index*/
-    int _current_samples_per_step; /**< keeps track of the active samples per step*/
+    int _min_samples_per_step; /**< user input */
+    int _max_samples_per_step; /**< user input */
+    int _step_increment; /**< user input */
+    int _samp_rate; /**< user input */
+    int _sample_counter; /**< keeps track of the index within a step */
+    int _step_counter; /**< keeps track of the step index */
+    int _current_samples_per_step; /**< keeps track of the active samples per step */
     float _samp_rate_as_float;
-    float _current_modelled_frequency; /**< modelled frequency for each sample*/
     float _min_modelled_frequency;
+    float _current_modelled_frequency; /**< modelled frequency for each sample */
 
 public:
     tagged_staircase_impl(int min_samples_per_step,
