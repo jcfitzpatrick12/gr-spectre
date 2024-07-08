@@ -41,13 +41,11 @@ tagged_staircase_impl::tagged_staircase_impl(int min_samples_per_step,
       _samp_rate(samp_rate),
       _sample_counter(0),
       _step_counter(0),
-      _current_samples_per_step(_min_samples_per_step)
-{   
-    // type convert the sample rate as a float, and compute the initial modelled frequency
-    float _samp_rate_as_float = static_cast<float>(_samp_rate);
-    float _min_modelled_frequency = _samp_rate_as_float/2.0f;
-    _current_modelled_frequency = _min_modelled_frequency;
-    // finally, tag the first sample
+      _current_samples_per_step(_min_samples_per_step),
+      _samp_rate_as_float(static_cast<float>(samp_rate)),
+      _min_modelled_frequency(static_cast<float>(samp_rate) / 2.0f),
+      _current_modelled_frequency(static_cast<float>(samp_rate) / 2.0f)
+{
     tag_step(0);
 }
 
