@@ -21,11 +21,11 @@ private:
     int _step_increment; /**< user input */
     int _samp_rate; /**< user input */
     int _sample_counter; /**< keeps track of the index within a step */
-    int _step_counter; /**< keeps track of the step index */
-    int _current_samples_per_step; /**< keeps track of the active samples per step */
-    float _samp_rate_as_float;
-    float _min_modelled_frequency;
-    float _current_modelled_frequency; /**< modelled frequency for each sample */
+    int _step_counter; /**< keeps track of the index of the step */
+    int _current_samples_per_step; /**< keeps track of the current step length */
+    float _samp_rate_as_float;  /**< Type cast sample rate as float*/
+    float _min_modelled_frequency; /**< The artificially assigned center frequency assigned to the first step*/
+    float _current_modelled_frequency; /**< The artifically assigned center frequency for the current step*/
 
 public:
     tagged_staircase_impl(int min_samples_per_step,
@@ -33,8 +33,8 @@ public:
                           int step_increment,
                           int samp_rate);
     ~tagged_staircase_impl();
-
-    void tag_step(int sample_index); // member function which tags the start of each step
+     // member function which tags the ith sample in the output buffer
+    void tag_step(int i);
     // Where all the action really happens
     int work(int noutput_items,
              gr_vector_const_void_star& input_items,

@@ -43,8 +43,8 @@ tagged_staircase_impl::tagged_staircase_impl(int min_samples_per_step,
       _step_counter(0),
       _current_samples_per_step(_min_samples_per_step),
       _samp_rate_as_float(static_cast<float>(samp_rate)),
-      _min_modelled_frequency(static_cast<float>(samp_rate) / 2.0f),
-      _current_modelled_frequency(static_cast<float>(samp_rate) / 2.0f)
+      _min_modelled_frequency(_samp_rate_as_float / 2.0f),
+      _current_modelled_frequency(_samp_rate_as_float / 2.0f)
 {
 }
 
@@ -54,10 +54,9 @@ tagged_staircase_impl::tagged_staircase_impl(int min_samples_per_step,
 tagged_staircase_impl::~tagged_staircase_impl() {}
 
 
-void tagged_staircase_impl::tag_step(int sample_index) {
-    // Add a tag to the first sample of the new step
-    const uint64_t absolute_offset = nitems_written(0) + sample_index;
-    const pmt::pmt_t key = pmt::intern("freq");
+void tagged_staircase_impl::tag_step(int i) {
+    const uint64_t absolute_offset = nitems_written(0) + i;
+    const pmt::pmt_t key = pmt::string_to_symbol("freq");
     const pmt::pmt_t value = pmt::from_float(_current_modelled_frequency);
     const pmt::pmt_t srcid = pmt::string_to_symbol(alias());
     add_item_tag(0, absolute_offset, key, value, srcid);
