@@ -56,7 +56,7 @@ tagged_staircase_impl::~tagged_staircase_impl() {}
 
 void tagged_staircase_impl::tag_step(int i) {
     const uint64_t absolute_offset = nitems_written(0) + i;
-    const pmt::pmt_t key = pmt::string_to_symbol("freq");
+    const pmt::pmt_t key = pmt::string_to_symbol("rx_freq");
     const pmt::pmt_t value = pmt::from_float(_current_modelled_frequency);
     const pmt::pmt_t srcid = pmt::string_to_symbol(alias());
     add_item_tag(0, absolute_offset, key, value, srcid);
