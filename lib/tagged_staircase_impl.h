@@ -34,7 +34,7 @@ public:
                           int samp_rate);
     ~tagged_staircase_impl();
 
-    void tag_step(int sample_index); // member function which tags the start of each step
+    // void tag_step(int sample_index); // member function which tags the start of each step
     // Where all the action really happens
     int work(int noutput_items,
              gr_vector_const_void_star& input_items,
