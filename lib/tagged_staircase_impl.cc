@@ -46,7 +46,6 @@ tagged_staircase_impl::tagged_staircase_impl(int min_samples_per_step,
       _min_modelled_frequency(static_cast<float>(samp_rate) / 2.0f),
       _current_modelled_frequency(static_cast<float>(samp_rate) / 2.0f)
 {
-    // tag_step(0);
 }
 
 /*
@@ -68,10 +67,15 @@ void tagged_staircase_impl::tag_step(int sample_index) {
 int tagged_staircase_impl::work(int noutput_items,
                                 gr_vector_const_void_star& input_items,
                                 gr_vector_void_star& output_items)
-{
+{   
     // Type cast the output buffer to point to output_type
     output_type* optr = static_cast<output_type*>(output_items[0]);
 
+    // tag the very first sample of the stream
+    if (nitems_written(0) == 0) {
+        tag_step(0);
+    }
+    
     // Process each output item
     for (int i = 0; i < noutput_items; i++) {
         // Output the current step (1-based) index
