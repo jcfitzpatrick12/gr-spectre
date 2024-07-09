@@ -46,7 +46,7 @@ tagged_staircase_impl::tagged_staircase_impl(int min_samples_per_step,
       _min_modelled_frequency(static_cast<float>(samp_rate) / 2.0f),
       _current_modelled_frequency(static_cast<float>(samp_rate) / 2.0f)
 {
-    tag_step(0);
+    // tag_step(0);
 }
 
 /*
@@ -83,7 +83,7 @@ int tagged_staircase_impl::work(int noutput_items,
         // Check if the current step is complete
         if (_sample_counter >= _current_samples_per_step) {
             // tag the first sample of the new step
-            // tag_step(i);
+            tag_step(i);
             // Move to the next step, reset the sample counter
             _sample_counter = 0;
             // increment the step counter
