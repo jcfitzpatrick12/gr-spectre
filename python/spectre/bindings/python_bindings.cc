@@ -23,7 +23,6 @@ namespace py = pybind11;
 // BINDING_FUNCTION_PROTOTYPES(
     void bind_batched_file_sink(py::module& m);
     void bind_sweep_driver(py::module& m);
-    void bind_batched_file_vector_sink(py::module& m);
     void bind_tagged_staircase(py::module& m);
 // ) END BINDING_FUNCTION_PROTOTYPES
 
@@ -55,7 +54,6 @@ PYBIND11_MODULE(spectre_python, m)
     // BINDING_FUNCTION_CALLS(
     bind_batched_file_sink(m);
     bind_sweep_driver(m);
-    bind_batched_file_vector_sink(m);
     bind_tagged_staircase(m);
     // ) END BINDING_FUNCTION_CALLS
 }

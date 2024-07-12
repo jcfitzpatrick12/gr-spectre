@@ -14,7 +14,6 @@ list(APPEND spectre_sources
     batched_file_sink_impl.cc
     bin_chunk_helper.cc  # Added the new helper source file
     sweep_driver_impl.cc
-    batched_file_vector_sink_impl.cc
     tagged_staircase_impl.cc )
 
 set(spectre_sources "${spectre_sources}" PARENT_SCOPE)

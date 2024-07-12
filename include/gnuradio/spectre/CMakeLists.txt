@@ -14,6 +14,5 @@ install(FILES
     bin_chunk_helper.h
     batched_file_sink.h
     sweep_driver.h
-    batched_file_vector_sink.h
     tagged_staircase.h DESTINATION include/gnuradio/spectre
 )
