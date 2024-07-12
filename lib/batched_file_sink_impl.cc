@@ -85,8 +85,6 @@ void batched_file_sink_impl::open_file(file_type ftype) {
 
     if (!file->is_open()) {
         throw std::runtime_error("Failed to open file: " + file_path.string());
-    } else {
-        std::cout << "Successfully opened file: " << file_path.string() << std::endl;
     }
 }
 
@@ -162,6 +160,9 @@ int batched_file_sink_impl::work(
             open_file(file_type::HDR);
             write_ms_correction();
         }
+        // set the elapsed time to zero, and impose that we won't open another file until _open_new_file is set back to true
+        _elapsed_time = 0;
+        _open_new_file = false;
     }
 
     // whether or not we saving tagged metadata in the detached header, dump all the IQ samples to the bin chunk
