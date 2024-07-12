@@ -154,12 +154,11 @@ int batched_file_sink_impl::work(
 
     if (_open_new_file) {
         _bch.set_attrs(); // effectivly a setter for the header and binary file paths, and computes ms correction
+        _elapsed_time = 0; // set the elapsed time to zero, 
+        _open_new_file = false; // impose that we won't open another file until _open_new_file is set back to true
         open_file(file_type::BIN); // open the binary file ready for the raw IQ samples
         open_file(file_type::HDR); // open the detached header ready for the ms_correction and (if sweeping) swept tag info
         write_ms_correction(); // write the ms_correction to the detached header
-        // set the elapsed time to zero, and impose that we won't open another file until _open_new_file is set back to true
-        _elapsed_time = 0;
-        _open_new_file = false;
     }
 
     // whether or not we saving tagged metadata in the detached header, dump all the IQ samples to the bin chunk
