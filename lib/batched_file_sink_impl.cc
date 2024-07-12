@@ -43,68 +43,62 @@ batched_file_sink_impl::batched_file_sink_impl(std::string parent_dir,
 batched_file_sink_impl::~batched_file_sink_impl(
 )
 {
+if (_bin_file.is_open()) {
+    _bin_file.close();
+};
 
-    if (_bin_file.is_open()) {
-        _bin_file.close();
-    };
+if (_hdr_file.is_open()) {
+    _hdr_file.close();
+}
+};
+
+
+void batched_file_sink_impl::open_file(file_type ftype) 
+{
+    std::ofstream* file = nullptr;
+    fs::path file_path;
+
+    switch (ftype) {
+        case file_type::BIN:
+            file = &_bin_file;
+            file_path = _bch.get_bin_absolute_path();
+            break;
+        case file_type::HDR:
+            file = &_hdr_file;
+            file_path = _bch.get_hdr_absolute_path();
+            break;
+        default:
+            throw std::invalid_argument("Invalid file type specified.");
+    }
+
+    if (file->is_open()) {
+        file->close();
+    }
+
+    if (!fs::exists(_bch.get_parent_path_with_date_dirs())) {
+        fs::create_directories(_bch.get_parent_path_with_date_dirs());
+    }
+
+    file->open(file_path, std::ios::binary | std::ios::out);
+
+    if (!file->is_open()) {
+        throw std::runtime_error("Failed to open file: " + file_path.string());
+    }
+}
+
+
+void batched_file_sink_impl::write_ms_correction() 
+{
+    int32_t millisecond_correction = _bch.get_millisecond_correction();
+    const char* millisecond_correction_bytes = reinterpret_cast<char*>(&millisecond_correction);
 
     if (_hdr_file.is_open()) {
-        _hdr_file.close();
+        _hdr_file.write(millisecond_correction_bytes, sizeof(int));
+    } else {
+        throw std::runtime_error("Failed to write ms_correction to bin file.");
     }
-
-};
-
-void batched_file_sink_impl::open_bin_file() 
-{   
-    if (_bin_file.is_open()) {
-            _bin_file.close();
-        };
-
-    /* (essentially) update then fetch the _absolute_path and _millisecond 
-    correction member variables of the instance _bch of the batched_file_handler class */
-    _bch.set_attrs();
-    fs::path bin_chunk_path = _bch.get_bin_absolute_path();
-    fs::path parent_path_with_date_dirs = _bch.get_parent_path_with_date_dirs();
-
-    // if the parent path does not already exist, create it
-    if (!fs::exists(parent_path_with_date_dirs)) {
-        fs::create_directories(parent_path_with_date_dirs);
-    };
-    
-    // open the batched file in binary mode, ready for writing.
-    _bin_file.open(bin_chunk_path, std::ios::binary | std::ios::out);
-
-    // extract the millisecond correction
-    int32_t millisecond_correction = _bch.get_millisecond_correction();
-    // Convert the integer to a char pointer to access its raw byte representation
-    const char* millisecond_correction_bytes = reinterpret_cast<char*>(&millisecond_correction);
-    // write the millisecond correction to the start of the binary file
-    if (_bin_file.is_open()) {
-        _bin_file.write(millisecond_correction_bytes, sizeof(int));
-    }
-    else {
-        throw std::runtime_error("Failed to open file.");
-    };
-
-    /* once a file has been opened, we will not open a new file until chunk_time [s] have elapsed */
-    _elapsed_time = 0; 
-    _open_new_file = false;
-};
-
-void batched_file_sink_impl::open_hdr_file() {
-    // this is called after open_bin_file, and we want to preserve the time stamp,
-    // so use the member variable _bch assuming set_attrs has already occurred
-    fs::path hdr_chunk_path = _bch.get_hdr_absolute_path();
-    fs::path parent_path = _bch.get_parent_path_with_date_dirs();
-
-    // if the parent path does not already exist, create it
-    if (!fs::exists(parent_path)) {
-        fs::create_directories(parent_path);
-    };
-    
-    // open the hdr batched file in binary mode, ready for writing.
-    _hdr_file.open(hdr_chunk_path, std::ios::binary | std::ios::out);
 }
+
 
 void batched_file_sink_impl::write_input_buffer_to_bin(
     const char* in0,
@@ -157,10 +151,12 @@ int batched_file_sink_impl::work(
     const char* in0 = static_cast<const char*>(input_items[0]);
 
     if (_open_new_file) {
-        open_bin_file();
-        // if sweeping is configured true, open a hdr file for the tagged metadata
+        _bch.set_attrs(); // effectivly set the bin and header relat
+        open_file(file_type::BIN);
+        // if sweeping is configured true, open a hdr file for the metadata (tag info and ms_correction)
         if (_sweeping) {
-            open_hdr_file();
+            open_file(file_type::HDR);
+            write_ms_correction();
         }
     }
 

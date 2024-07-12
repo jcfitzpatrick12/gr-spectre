@@ -16,6 +16,11 @@ namespace fs = std::filesystem;
 namespace gr {
 namespace spectre {
 
+enum class file_type {
+    BIN,
+    HDR
+}; // file_type is passed in as a system argument to the open_file member function
+
 class batched_file_sink_impl : public batched_file_sink
 {
 private:
@@ -40,11 +45,10 @@ public:
     ); // Constructor. 
 
     ~batched_file_sink_impl();// Destructor.
-    void open_bin_file(); // Open a binary file ready for writing.
+    void open_file(file_type ftype); // open member function for either either the binary or header file
+    void write_ms_correction(); // writes the ms correction to the active bin file
     void write_input_buffer_to_bin(const char* in0, int noutput_items); // Write the input buffer to the active bin file. 
-    void open_hdr_file(); // Open a header file ready for writing.
     void write_metadata_to_hdr(int noutput_items); // Write the metadata information to the detached header. 
-
     int work(
         int noutput_items,
         gr_vector_const_void_star& input_items,
