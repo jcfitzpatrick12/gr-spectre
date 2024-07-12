@@ -14,7 +14,7 @@
 /* BINDTOOL_GEN_AUTOMATIC(0)                                                       */
 /* BINDTOOL_USE_PYGCCXML(0)                                                        */
 /* BINDTOOL_HEADER_FILE(batched_file_sink.h)                                        */
-/* BINDTOOL_HEADER_FILE_HASH(ec86326a07a375a7a49aff73fa1d2050)                     */
+/* BINDTOOL_HEADER_FILE_HASH(63bb35982db0e558600f2d1b9ada7333)                     */
 /***********************************************************************************/
 
 #include <pybind11/complex.h>
@@ -41,7 +41,7 @@ void bind_batched_file_sink(py::module& m)
            py::arg("tag") = "",
            py::arg("chunk_size") = 60,
            py::arg("samp_rate") = 32000,
-           py::arg("sweeping")  = false,
+           py::arg("sweeping") = false,
            D(batched_file_sink,make)
         )
         
