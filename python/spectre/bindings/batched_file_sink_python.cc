@@ -41,6 +41,7 @@ void bind_batched_file_sink(py::module& m)
            py::arg("tag") = "",
            py::arg("chunk_size") = 60,
            py::arg("samp_rate") = 32000,
+           py::arg("sweeping")  = false,
            D(batched_file_sink,make)
         )
         
