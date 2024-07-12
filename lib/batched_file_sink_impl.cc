@@ -53,8 +53,7 @@ if (_hdr_file.is_open()) {
 };
 
 
-void batched_file_sink_impl::open_file(file_type ftype) 
-{
+void batched_file_sink_impl::open_file(file_type ftype) {
     std::ofstream* file = nullptr;
     fs::path file_path;
 
@@ -76,13 +75,18 @@ void batched_file_sink_impl::open_file(file_type ftype)
     }
 
     if (!fs::exists(_bch.get_parent_path_with_date_dirs())) {
-        fs::create_directories(_bch.get_parent_path_with_date_dirs());
+        bool created = fs::create_directories(_bch.get_parent_path_with_date_dirs());
+        if (!created) {
+            throw std::runtime_error("Failed to create directories: " + _bch.get_parent_path_with_date_dirs().string());
+        }
     }
 
     file->open(file_path, std::ios::binary | std::ios::out);
 
     if (!file->is_open()) {
         throw std::runtime_error("Failed to open file: " + file_path.string());
+    } else {
+        std::cout << "Successfully opened file: " << file_path.string() << std::endl;
     }
 }
 
