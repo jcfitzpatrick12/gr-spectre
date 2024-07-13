@@ -35,7 +35,8 @@ batched_file_sink_impl::batched_file_sink_impl(std::string parent_dir,
       _sweeping(sweeping), // instantiate with user input.
       _open_new_file(true), // impose that we will open a new file when this class is instantiate
       _elapsed_time(0), // elapsed time is zero initially, by definition.
-      _bch(parent_dir, tag) // create an instance of the bin chunk handler class
+      _bch(parent_dir, tag), // create an instance of the bin chunk handler class
+      _frequency_key(pmt::string_to_symbol("rx_freq"))
 {
     
 };
@@ -124,8 +125,8 @@ void batched_file_sink_impl::write_metadata_to_hdr(
     // compute how any items are being processed by the work function currently
     uint64_t end_N = abs_N + (uint64_t)(noutput_items);
     std::vector<tag_t> all_tags;
-    // can specify the key here to extract tags of a particular key, likely specify 
-    get_tags_in_range(all_tags, 0, abs_N, end_N /*, pmt::pmt_t key*/);
+    // get all frequency tags
+    get_tags_in_range(all_tags, 0, abs_N, end_N, _frequency_key);
     // loop through each tag
     for (const tag_t &tag : all_tags) {
         std::cout << pmt::symbol_to_string(tag.key) << std::endl;

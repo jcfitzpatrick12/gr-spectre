@@ -34,6 +34,7 @@ private:
     bool _open_new_file; // Private attribute to determine whether a new file should be opened at each call of the work function 
     float _elapsed_time; // Elapsed time since the file opening for that batch 
     bin_chunk_helper _bch; // class which handles the binary chunk file metadata 
+    pmt::pmt_t _frequency_key; // declare the frequency tag key
 
 public:
     batched_file_sink_impl(
