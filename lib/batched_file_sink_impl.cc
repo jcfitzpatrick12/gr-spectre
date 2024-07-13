@@ -36,9 +36,9 @@ batched_file_sink_impl::batched_file_sink_impl(std::string parent_dir,
       _open_new_file(true), // impose that we will open a new file when this class is instantiate
       _elapsed_time(0), // elapsed time is zero initially, by definition.
       _bch(parent_dir, tag), // create an instance of the bin chunk handler class
-      _frequency_key(pmt::string_to_symbol("rx_freq"))
+      _frequency_key(pmt::string_to_symbol("rx_freq")), // define here what the frequency tag is
+      _abs_index_last_tag(0) // by assumption, we assume that the first sample is tagged
 {
-    
 };
 
 batched_file_sink_impl::~batched_file_sink_impl(
@@ -117,23 +117,38 @@ void batched_file_sink_impl::write_input_buffer_to_bin(
     }
 }
 
+void batched_file_sink_impl::ensure_first_sample_tagged() {
+    // prepare a vector to hold all the tags in the current range of the work functio
+    std::vector<tag_t> first_tag;
+    // essentially fetch a vector which contains the tag of the first sample if it exists, and is empty otherwise
+    get_tags_in_range(first_tag, 0, 0, 1);
+    // if the first sample is not tagged, throw a runtime error
+    if (first_tag.empty()) {
+        throw std::runtime_error("First sample is missing a tag!");
+    }
+}
+
 void batched_file_sink_impl::write_metadata_to_hdr(
     int noutput_items
 ){  
     // find how many items have been read as of all previous calls to the work function
-    uint64_t abs_N = nitems_read(0);
+    uint64_t abs_start_N = nitems_read(0);
     // compute how any items are being processed by the work function currently
-    uint64_t end_N = abs_N + (uint64_t)(noutput_items);
+    uint64_t abs_end_N = abs_start_N + (uint64_t)(noutput_items);
+    // prepare a vector to hold all the tags in the current range of the work functio
     std::vector<tag_t> all_tags;
     // get all frequency tags
-    get_tags_in_range(all_tags, 0, abs_N, end_N, _frequency_key);
+    get_tags_in_range(all_tags, 0, abs_start_N, abs_end_N, _frequency_key);
     // loop through each tag
     for (const tag_t &tag : all_tags) {
-        std::cout << pmt::symbol_to_string(tag.key) << std::endl;
-        // evaluate the offsets between each tag and thus compute the number of items between each new tag
-        // keep track of this as part of a member variable somehow
-        // so to allow continuity between calls to the work function and also opening new files
-        // as we go, add the bytes to hdr_bytes vector!
+        // find the current frequency
+        _current_frequency = pmt::to_float(tag.value);
+        // find the current tag offset 
+        _abs_index_last_tag = tag.offset;
+        // print the absolute index of each tag
+        std::cout << _abs_index_last_tag << std::endl;
+        // compute the sample offset (tag index displaced s.t. start_N is at index zero)
+        // int sample_index = static_cast<int>(tag.offset - abs_start_N);
     }
 
     // write the stream ()
@@ -172,6 +187,12 @@ int batched_file_sink_impl::work(
 
     // if sweeping is activated, save the tagged info in the detached header file
     if (_sweeping) {
+        // if this is our first call to the work function, check the first sample is tagged
+        int num_items_read = nitems_read(0);
+        if (num_items_read == 0) {
+            ensure_first_sample_tagged();
+        }
+        // if it is, proceed as normal
         if (_hdr_file.is_open()){
             write_metadata_to_hdr(noutput_items);
         }

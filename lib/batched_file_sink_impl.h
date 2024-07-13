@@ -35,6 +35,8 @@ private:
     float _elapsed_time; // Elapsed time since the file opening for that batch 
     bin_chunk_helper _bch; // class which handles the binary chunk file metadata 
     pmt::pmt_t _frequency_key; // declare the frequency tag key
+    float _current_frequency; // if sweeping is set to True, tracks the current tagged frequency of the incoming samples
+    int _abs_index_last_tag; // if sweeping is set to True, tracks the absolute index of the last tag
 
 public:
     batched_file_sink_impl(
@@ -47,6 +49,7 @@ public:
 
     ~batched_file_sink_impl();// Destructor.
     void open_file(file_type ftype); // open member function for either either the binary or header file
+    void ensure_first_sample_tagged();
     void write_ms_correction(); // writes the ms correction to the active bin file
     void write_input_buffer_to_bin(const char* in0, int noutput_items); // Write the input buffer to the active bin file. 
     void write_metadata_to_hdr(int noutput_items); // Write the metadata information to the detached header. 
