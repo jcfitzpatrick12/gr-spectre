@@ -95,7 +95,7 @@ void batched_file_sink_impl::write_ms_correction()
     const char* millisecond_correction_bytes = reinterpret_cast<char*>(&millisecond_correction);
 
     if (_hdr_file.is_open()) {
-        _hdr_file.write(millisecond_correction_bytes, sizeof(int));
+        _hdr_file.write(millisecond_correction_bytes, sizeof(int32_t));
     } else {
         throw std::runtime_error("Failed to write ms_correction to bin file.");
     }
