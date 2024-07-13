@@ -36,7 +36,7 @@ batched_file_sink_impl::batched_file_sink_impl(std::string parent_dir,
       _open_new_file(true), // impose that we will open a new file when this class is instantiate
       _elapsed_time(0), // elapsed time is zero initially, by definition.
       _bch(parent_dir, tag), // create an instance of the bin chunk handler class
-      _frequency_key(pmt::string_to_symbol("rx_freq"))
+      _frequency_key(pmt::string_to_symbol("rx_freqs"))
 {
     
 };
