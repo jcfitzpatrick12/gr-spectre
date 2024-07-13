@@ -30,7 +30,7 @@ public:
         std::string tag
     ); // Constructor
     ~bin_chunk_helper(); // Destructor
-    void set_attrs(); // Effectively a setter for the _millisecond_correction, _bin_absolute_path and _hdr_absolute_path member variables.
+    void update(); // Effectively a setter for the _millisecond_correction, _bin_absolute_path and _hdr_absolute_path member variables.
     fs::path get_bin_absolute_path(); // Public getter for the _bin_absolute_path member variable. 
     fs::path get_hdr_absolute_path(); // Public getter for the _hdr_absolute_path member variable. 
     fs::path get_parent_path_with_date_dirs(); //Public getter for the parent path of the binary chunk file.

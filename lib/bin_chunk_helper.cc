@@ -15,7 +15,7 @@ bin_chunk_helper::bin_chunk_helper(
 
 bin_chunk_helper::~bin_chunk_helper(){};
 
-void bin_chunk_helper::set_attrs(){
+void bin_chunk_helper::update(){
     // evaluate current system time as ms since epoch (expressed as a 64 bit integer)
     auto now = std::chrono::system_clock::now();
     auto time_since_epoch = now.time_since_epoch();
