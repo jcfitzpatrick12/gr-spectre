@@ -28,11 +28,11 @@ batched_file_sink_impl::batched_file_sink_impl(std::string parent_dir,
     : gr::sync_block("batched_file_sink",
                      gr::io_signature::make(1, 1, sizeof(input_type)),
                      gr::io_signature::make(0, 0, 0)),
-      _parent_dir(parent_dir), // instantiate with user input.
-      _tag(tag), // instantiate with user input.
-      _chunk_size(chunk_size), // instantiate with user input.
-      _samp_rate(samp_rate), // instantiate with user input.
-      _sweeping(sweeping), // instantiate with user input.
+      _parent_dir(parent_dir), /**< user input */
+      _tag(tag), /**< user input */
+      _chunk_size(chunk_size),/**< user input */
+      _samp_rate(samp_rate), /**< user input */
+      _sweeping(sweeping), /**< user input */
       _open_new_file(true), // impose that we will open a new file at the first call of the work function
       _elapsed_time(0), // elapsed time is zero initially, by definition.
       _bch(parent_dir, tag), // create an instance of the bin chunk handler class
