@@ -73,7 +73,7 @@ int tagged_staircase_impl::work(int noutput_items,
     // Process each output item
     for (int i = 0; i < noutput_items; i++) {
         // tag the first sample of the stream
-        if (nitems_read(0) == 0 && i == 0) {
+        if (nitems_written(0) == 0 && i == 0) {
             tag_step(0);
         }
 
