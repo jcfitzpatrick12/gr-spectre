@@ -13,30 +13,35 @@
 
 namespace fs = std::filesystem;
 
-namespace gr {
-namespace spectre {
-
-enum class file_type {
+namespace gr 
+{
+namespace spectre 
+{
+enum class file_type 
+{
     BIN,
     HDR
-}; // file_type is passed in as a system argument to the open_file member function
+}; // file_type is passed in as an argument to the open_file member function
 
 class batched_file_sink_impl : public batched_file_sink
 {
 private:
-    std::string _parent_dir; // Defines the absolute path to the parent directory to hold the batched files.
-    std::string _tag; // File names are tagged with this string. 
-    int _chunk_size; // The (temporal) size of each batched file. 
-    int _samp_rate; // The sample rate used to collect the incoming data stream. 
-    bool _sweeping; // If sweeping, create a detached header file for metadata.
+    /* storing user inputs as member variables */
+    std::string _parent_dir; // defines the absolute path to the parent directory to hold the batched files.
+    std::string _tag; // file names are tagged with this string. 
+    int _chunk_size; // the (temporal) size of each batched file. 
+    int _samp_rate; // the sample rate used to collect the incoming data stream. 
+    bool _sweeping; // if sweeping, create a detached header file for metadata.
+    /* private member variables used throughout the class. */
     std::ofstream _bin_file; // define an ofstream class to save the binary data for complex samples 
     std::ofstream _hdr_file; // define an ofstream class to save metadata if sweeping is true. 
-    bool _open_new_file; // Private attribute to determine whether a new file should be opened at each call of the work function 
-    float _elapsed_time; // Elapsed time since the file opening for that batch 
-    bin_chunk_helper _bch; // class which handles the binary chunk file metadata 
-    pmt::pmt_t _frequency_key; // declare the frequency tag key
-    float _current_frequency; // if sweeping is set to True, tracks the current tagged frequency of the incoming samples
-    int _abs_index_last_tag; // if sweeping is set to True, tracks the absolute index of the last tag
+    bool _open_new_file; // boolean determines whether new files should be opened at each call of the work function 
+    float _elapsed_time; // tracks the elapsed time at each call of the work function
+    bin_chunk_helper _bch; // class which offloads some of the chunk handling (computes the time stamp and file name)
+    pmt::pmt_t _frequency_key; // declare the tag key which denotes the frequency tag
+    // by definition, if a frequency tag is found at absolute index N_start, and the next tag is at absolute index N_end
+    // all samples with absolute index [N_start, N_end) were collected at frequency corresponding to that tag at N_start
+    tag_t _active_frequency_tag;
 
 public:
     batched_file_sink_impl(
@@ -49,17 +54,18 @@ public:
 
     ~batched_file_sink_impl();// Destructor.
     void open_file(file_type ftype); // open member function for either either the binary or header file
-    void ensure_first_sample_tagged();
-    void write_ms_correction(); // writes the ms correction to the active bin file
+    void set_initial_active_tag_state();
+    void write_ms_correction_to_hdr(); // writes the ms correction to the active hdr file as a 32-bit integer
+    void write_active_frequency_to_hdr(); // writes the active frequency to the active hdr file as a 32-bit float
+    void write_num_samples_to_hdr(); // writes the num samples for the active frequency to the active hdr file as a 32-bit integer
+    void write_tag_states_to_hdr(int noutput_items); // Write the metadata information to the detached header. 
     void write_input_buffer_to_bin(const char* in0, int noutput_items); // Write the input buffer to the active bin file. 
-    void write_metadata_to_hdr(int noutput_items); // Write the metadata information to the detached header. 
     int work(
         int noutput_items,
         gr_vector_const_void_star& input_items,
         gr_vector_void_star& output_ite
     );
 };
-
 } // namespace spectre
 } // namespace gr
 

@@ -33,11 +33,10 @@ batched_file_sink_impl::batched_file_sink_impl(std::string parent_dir,
       _chunk_size(chunk_size), // instantiate with user input.
       _samp_rate(samp_rate), // instantiate with user input.
       _sweeping(sweeping), // instantiate with user input.
-      _open_new_file(true), // impose that we will open a new file when this class is instantiate
+      _open_new_file(true), // impose that we will open a new file at the first call of the work function
       _elapsed_time(0), // elapsed time is zero initially, by definition.
       _bch(parent_dir, tag), // create an instance of the bin chunk handler class
-      _frequency_key(pmt::string_to_symbol("rx_freq")), // define here what the frequency tag is
-      _abs_index_last_tag(0) // by assumption, we assume that the first sample is tagged
+      _frequency_key(pmt::string_to_symbol("rx_freq")) // declaring the frequency tag key
 {
 };
 
@@ -54,7 +53,8 @@ if (_hdr_file.is_open()) {
 };
 
 
-void batched_file_sink_impl::open_file(file_type ftype) {
+void batched_file_sink_impl::open_file(file_type ftype) 
+{
     std::ofstream* file = nullptr;
     fs::path file_path;
 
@@ -89,8 +89,24 @@ void batched_file_sink_impl::open_file(file_type ftype) {
     }
 }
 
+void batched_file_sink_impl::set_initial_active_tag_state() 
+{
+    // prepare a vector to hold all the tags in the current range of the work functio
+    std::vector<tag_t> vector_containing_first_tag;
+    // essentially fetch a vector which contains the tag of the first sample if it exists, and is empty otherwise
+    get_tags_in_range(vector_containing_first_tag, 0, 0, 1, _frequency_key);
+    // if the first sample is not tagged, throw a runtime error
+    if (vector_containing_first_tag.empty()) {
+        throw std::runtime_error("First sample is missing a tag!");
+    }
+    else {
+        for (const tag_t &first_tag : vector_containing_first_tag) {
+            _active_frequency_tag = first_tag;
+        }
+    }
+}
 
-void batched_file_sink_impl::write_ms_correction() 
+void batched_file_sink_impl::write_ms_correction_to_hdr() 
 {
     int32_t millisecond_correction = _bch.get_millisecond_correction();
     const char* millisecond_correction_bytes = reinterpret_cast<char*>(&millisecond_correction);
@@ -102,35 +118,21 @@ void batched_file_sink_impl::write_ms_correction()
     }
 }
 
-
-void batched_file_sink_impl::write_input_buffer_to_bin(
-    const char* in0,
-    int noutput_items
-){
-    // write the entire buffer to the current active binary chunk file
-    _bin_file.write(in0, noutput_items * sizeof(gr_complex));
-    // infer the elapsed_time from the (input) sample rate, and number of items in the buffer
-    _elapsed_time += noutput_items * (1.0 / _samp_rate);
-    // if elapsed time is greater than the (input) chunk_size, at the next iteration, we will open a new file
-    if (_elapsed_time >= _chunk_size) {
-        _open_new_file = true;
-    }
+void batched_file_sink_impl::write_active_frequency_to_hdr()
+{
+    // to be implemented
 }
 
-void batched_file_sink_impl::ensure_first_sample_tagged() {
-    // prepare a vector to hold all the tags in the current range of the work functio
-    std::vector<tag_t> first_tag;
-    // essentially fetch a vector which contains the tag of the first sample if it exists, and is empty otherwise
-    get_tags_in_range(first_tag, 0, 0, 1);
-    // if the first sample is not tagged, throw a runtime error
-    if (first_tag.empty()) {
-        throw std::runtime_error("First sample is missing a tag!");
-    }
+void batched_file_sink_impl::write_num_samples_to_hdr()
+{
+    // to be implemented
 }
 
-void batched_file_sink_impl::write_metadata_to_hdr(
+
+void batched_file_sink_impl::write_tag_states_to_hdr(
     int noutput_items
-){  
+)
+{  
     // find how many items have been read as of all previous calls to the work function
     uint64_t abs_start_N = nitems_read(0);
     // compute how any items are being processed by the work function currently
@@ -139,22 +141,45 @@ void batched_file_sink_impl::write_metadata_to_hdr(
     std::vector<tag_t> all_tags;
     // get all frequency tags
     get_tags_in_range(all_tags, 0, abs_start_N, abs_end_N, _frequency_key);
-    // loop through each tag
+    // loop through each frequency tag, and compute the number of samples correspoonding to each active frequency tag
     for (const tag_t &tag : all_tags) {
-        // find the current frequency
-        _current_frequency = pmt::to_float(tag.value);
-        // extrac the current tag absolute index
-        int abs_index_current_tag = tag.offset;
-        // find the running difference between the current tag and the last tag
-        int running_diff = abs_index_current_tag - _abs_index_last_tag;
-        // reassign the last tag absolute index
-        _abs_index_last_tag = abs_index_current_tag;
-        // print the running difference
-        std::cout << running_diff << std::endl;
+        // find the state of the current active tag
+        float frequency_of_active_tag = pmt::to_float(_active_frequency_tag.value);
+        int abs_index_of_active_tag = _active_frequency_tag.offset;
 
+        // find the state of the new tag
+        float frequency_of_new_tag = pmt::to_float(tag.value);
+        int abs_index_of_new_tag = tag.offset;
+
+        // compute the number of samples collected at the active tag
+        int num_samples_at_active_tag = abs_index_of_new_tag - abs_index_of_active_tag;
+
+        // print check
+        std::cout << frequency_of_active_tag << std::endl;
+        std::cout << num_samples_at_active_tag << std::endl;
+
+        // update the active tag
+        _active_frequency_tag = tag;
+        
     }
 
     // write the stream ()
+}
+
+
+void batched_file_sink_impl::write_input_buffer_to_bin(
+    const char* in0,
+    int noutput_items
+)
+{
+    // write the entire buffer to the current active binary chunk file
+    _bin_file.write(in0, noutput_items * sizeof(gr_complex));
+    // infer the elapsed_time from the (input) sample rate, and number of items in the buffer
+    _elapsed_time += noutput_items * (1.0 / _samp_rate);
+    // if elapsed time is greater than the (input) chunk_size, at the next iteration, we will open a new file
+    if (_elapsed_time >= _chunk_size) {
+        _open_new_file = true;
+    }
 }
 
 int batched_file_sink_impl::work(
@@ -173,14 +198,13 @@ int batched_file_sink_impl::work(
 
     if (_open_new_file) {
         _bch.update(); // effectivly set the header and binary file paths, and computes ms correction
-        _elapsed_time = 0; // set the elapsed time to zero, 
         _open_new_file = false; // impose that we won't open another file until _open_new_file is set back to true
         open_file(file_type::BIN); // open the binary file ready for the raw IQ samples
-        open_file(file_type::HDR); // open the detached header ready for the ms_correction and (if sweeping) swept tag info
-        write_ms_correction(); // write the ms_correction to the detached header
+        open_file(file_type::HDR); // open the detached header ready for metadata writing
+        write_ms_correction_to_hdr(); // when the detached header is opened for the first time, write the ms_correction to it first as a 32-bit integer
     }
 
-    // whether or not we saving tagged metadata in the detached header, dump all the IQ samples to the bin chunk
+    // dump all the IQ samples to the binary chunk file
     if (_bin_file.is_open()) {
         write_input_buffer_to_bin(in0, noutput_items);
     }
@@ -190,14 +214,14 @@ int batched_file_sink_impl::work(
 
     // if sweeping is activated, save the tagged info in the detached header file
     if (_sweeping) {
-        // if this is our first call to the work function, check the first sample is tagged
-        int num_items_read = nitems_read(0);
-        if (num_items_read == 0) {
-            ensure_first_sample_tagged();
+        // if this is our first call to the work function, check the first sample is tagged and initialise the initial tag state
+        if (nitems_read(0) == 0) {
+            set_initial_active_tag_state();
         }
-        // if it is, proceed as normal
+
+        // with the initial tag state set, proceed to write the metadata to the detached header
         if (_hdr_file.is_open()){
-            write_metadata_to_hdr(noutput_items);
+            write_tag_states_to_hdr(noutput_items);
         }
         else {
             throw std::runtime_error("Failed to write to hdr file.");
