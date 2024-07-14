@@ -133,8 +133,9 @@ void batched_file_sink_impl::write_tag_states_to_hdr(
     int noutput_items
 )
 {  
-    // find how many items have been read as of all previous calls to the work function
-    uint64_t abs_start_N = nitems_read(0);
+    // find how many items have been read as of all previous calls to the work function ?
+    // max logic is to ignore the tag of the first sample (whose state was set initially)
+    uint64_t abs_start_N = std::max(1, (int)(nitems_read(0)));
     // compute how any items are being processed by the work function currently
     uint64_t abs_end_N = abs_start_N + (uint64_t)(noutput_items);
     // prepare a vector to hold all the tags in the current range of the work functio
