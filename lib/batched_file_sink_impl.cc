@@ -113,7 +113,7 @@ void batched_file_sink_impl::write_num_samples_to_hdr()
 }
 
 
-void batched_file_sink_impl::set_initial_active_tag_state() 
+void batched_file_sink_impl::set_initial_active_tag() 
 {
     // prepare a vector to hold all the tags in the current range of the work functio
     std::vector<tag_t> vector_containing_first_tag;
@@ -133,7 +133,7 @@ void batched_file_sink_impl::set_initial_active_tag_state()
 void batched_file_sink_impl::write_tag_states_to_hdr(int noutput_items) {  
     // Check if this is the first call to the work function
     if (nitems_read(0) == 0) {
-        set_initial_active_tag_state();
+        set_initial_active_tag();
     }
 
     // Compute the absolute start and end indices
@@ -144,21 +144,28 @@ void batched_file_sink_impl::write_tag_states_to_hdr(int noutput_items) {
     std::vector<tag_t> all_tags;
     get_tags_in_range(all_tags, 0, abs_start_N, abs_end_N, _frequency_key);
 
+    // Print the initial tag state
+    std::cout << "Initial active tag state:" << std::endl;
+    std::cout << "Active tag frequency" << pmt::to_float(_active_frequency_tag.value) << std::endl;
+    std::cout << "Active tag offset: " << _active_frequency_tag.offset << std::endl;
+
+    std::cout << "Now looping ..." << std::endl;
     // Iterate through each tag and compute the number of samples for each tag interval
     for (const tag_t &tag : all_tags) {
-        float frequency_of_active_tag = pmt::to_float(_active_frequency_tag.value);
-        uint64_t abs_index_of_active_tag = _active_frequency_tag.offset;
-        uint64_t abs_index_of_new_tag = tag.offset;
-
-        // Compute the number of samples for the current active tag
-        uint64_t num_samples_at_active_tag = abs_index_of_new_tag - abs_index_of_active_tag;
-
-        // Print the frequency and the number of samples
-        std::cout << "Frequency: " << frequency_of_active_tag << std::endl;
-        std::cout << "Number of samples at active tag: " << num_samples_at_active_tag << std::endl;
-
+        std::cout << "Active tag frequency" << pmt::to_float(_active_frequency_tag.value) << std::endl;
+        std::cout << "Active tag offset: " << _active_frequency_tag.offset << std::endl;
         // Update the active tag to the current tag
         _active_frequency_tag = tag;
+        // float frequency_of_active_tag = pmt::to_float(_active_frequency_tag.value);
+        // uint64_t abs_index_of_active_tag = _active_frequency_tag.offset;
+        // uint64_t abs_index_of_new_tag = tag.offset;
+
+        // // Compute the number of samples for the current active tag
+        // uint64_t num_samples_at_active_tag = abs_index_of_new_tag - abs_index_of_active_tag;
+
+        // // Print the frequency and the number of samples
+        // std::cout << "Frequency: " << frequency_of_active_tag << std::endl;
+        // std::cout << "Number of samples at active tag: " << num_samples_at_active_tag << std::endl;
     }
 }
 

@@ -54,7 +54,7 @@ public:
 
     ~batched_file_sink_impl();// Destructor.
     void open_file(file_type ftype); // open member function for either either the binary or header file
-    void set_initial_active_tag_state();
+    void set_initial_active_tag();
     void write_ms_correction_to_hdr(); // writes the ms correction to the active hdr file as a 32-bit integer
     void write_active_frequency_to_hdr(); // writes the active frequency to the active hdr file as a 32-bit float
     void write_num_samples_to_hdr(); // writes the num samples for the active frequency to the active hdr file as a 32-bit integer
