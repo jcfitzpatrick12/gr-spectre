@@ -84,7 +84,7 @@ int tagged_staircase_impl::work(int noutput_items,
         _sample_counter++;
 
         // Check if the current step is complete
-        if (_sample_counter >= _current_samples_per_step) {
+        if (_sample_counter > _current_samples_per_step) {
             // tag the first sample of the new step
             tag_step(i);
             // Move to the next step, reset the sample counter
