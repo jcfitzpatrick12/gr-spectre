@@ -143,12 +143,15 @@ void batched_file_sink_impl::write_metadata_to_hdr(
     for (const tag_t &tag : all_tags) {
         // find the current frequency
         _current_frequency = pmt::to_float(tag.value);
-        // find the current tag offset 
-        _abs_index_last_tag = tag.offset;
-        // print the absolute index of each tag
-        std::cout << _abs_index_last_tag << std::endl;
-        // compute the sample offset (tag index displaced s.t. start_N is at index zero)
-        // int sample_index = static_cast<int>(tag.offset - abs_start_N);
+        // extrac the current tag absolute index
+        int abs_index_current_tag = tag.offset;
+        // find the running difference between the current tag and the last tag
+        int running_diff = abs_index_current_tag - _abs_index_last_tag;
+        // reassign the last tag absolute index
+        _abs_index_last_tag = abs_index_current_tag;
+        // print the running difference
+        std::cout << running_diff << std::endl;
+
     }
 
     // write the stream ()
