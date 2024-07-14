@@ -134,6 +134,8 @@ void batched_file_sink_impl::write_tag_states_to_hdr(int noutput_items) {
     // Check if this is the first call to the work function
     if (nitems_read(0) == 0) {
         set_initial_active_tag();
+        std::cout << "Setting intial tag" << std::endl;
+        std::cout << std::endl;
     }
 
     // Compute the absolute start and end indices
@@ -145,11 +147,12 @@ void batched_file_sink_impl::write_tag_states_to_hdr(int noutput_items) {
     get_tags_in_range(all_tags, 0, abs_start_N, abs_end_N, _frequency_key);
 
     // Print the initial tag state
-    std::cout << "Initial active tag state:" << std::endl;
+    std::cout << "tag tag state pre-loop:" << std::endl;
     std::cout << "Active tag frequency" << pmt::to_float(_active_frequency_tag.value) << std::endl;
     std::cout << "Active tag offset: " << _active_frequency_tag.offset << std::endl;
+    std::cout << std::endl;
 
-    std::cout << "Now looping ..." << std::endl;
+    std::cout << "Now looping..." << std::endl;
     // Iterate through each tag and compute the number of samples for each tag interval
     for (const tag_t &tag : all_tags) {
         std::cout << "Active tag frequency" << pmt::to_float(_active_frequency_tag.value) << std::endl;
