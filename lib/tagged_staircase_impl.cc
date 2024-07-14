@@ -70,13 +70,13 @@ int tagged_staircase_impl::work(int noutput_items,
     // Type cast the output buffer to point to output_type
     output_type* optr = static_cast<output_type*>(output_items[0]);
 
+    // Tag the first sample of the stream
+    if (nitems_read(0) == 0) {
+        tag_step(0);
+    }
+
     // Process each output item
     for (int i = 0; i < noutput_items; i++) {
-        // tag the first sample of the stream
-        if (nitems_written(0) == 0 && i == 0) {
-            tag_step(0);
-        }
-
         // Output the current step (1-based) index
         optr[i] = output_type(static_cast<float>(_step_index + 1), 0.0f);
 
@@ -85,18 +85,20 @@ int tagged_staircase_impl::work(int noutput_items,
 
         // Check if the current step is complete
         if (_sample_index_within_step >= _current_samples_per_step) {
-            // tag the first sample of the new step
-            tag_step(i + 1);
             // Move to the next step, reset the sample counter
             _sample_index_within_step = 0;
-            // increment the step counter
+            // Increment the step counter
             _step_index++;
-            // increment the samples per step
+            // Increment the samples per step
             _current_samples_per_step += _step_increment;
-            // and increment the modelled frequnecy
+
+            // Tag the first sample of the new step
+            tag_step(i + 1);
+
+            // Increment the modelled frequency
             _current_modelled_frequency += _samp_rate_as_float;
 
-            // reset if we exceed the maximum step size
+            // Reset if we exceed the maximum step size
             if (_current_samples_per_step > _max_samples_per_step) {
                 _current_samples_per_step = _min_samples_per_step;
                 _step_index = 0;
