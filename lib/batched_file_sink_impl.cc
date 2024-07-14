@@ -89,6 +89,7 @@ void batched_file_sink_impl::open_file(file_type ftype)
     }
 }
 
+
 void batched_file_sink_impl::write_ms_correction_to_hdr() 
 {
     int32_t millisecond_correction = _bch.get_millisecond_correction();
@@ -112,50 +113,52 @@ void batched_file_sink_impl::write_num_samples_to_hdr()
 }
 
 
+void batched_file_sink_impl::set_initial_active_tag_state() 
+{
+    // prepare a vector to hold all the tags in the current range of the work functio
+    std::vector<tag_t> vector_containing_first_tag;
+    // essentially fetch a vector which contains the tag of the first sample if it exists, and is empty otherwise
+    get_tags_in_range(vector_containing_first_tag, 0, 0, 1, _frequency_key);
+    // if the first sample is not tagged, throw a runtime error
+    if (vector_containing_first_tag.empty()) {
+        throw std::runtime_error("First sample is missing a tag!");
+    }
+    else {
+        for (const tag_t &first_tag : vector_containing_first_tag) {
+            _active_frequency_tag = first_tag;
+        }
+    }
+}
+
 void batched_file_sink_impl::write_tag_states_to_hdr(int noutput_items) {  
-    // find how many items have been read as of all previous calls to the work function
-    uint64_t abs_start_N = nitems_read(0);
-    // compute how many items are being processed by the work function currently
+    // Check if this is the first call to the work function
+    if (nitems_read(0) == 0) {
+        set_initial_active_tag_state();
+    }
+
+    // Compute the absolute start and end indices
+    uint64_t abs_start_N = std::max(1, (int)(nitems_read(0)));
     uint64_t abs_end_N = abs_start_N + (uint64_t)(noutput_items);
-    // prepare a vector to hold all the tags in the current range of the work function
+
+    // Vector to hold all tags in the current range
     std::vector<tag_t> all_tags;
-    // get all frequency tags
     get_tags_in_range(all_tags, 0, abs_start_N, abs_end_N, _frequency_key);
 
-    // Initialize the first tag if this is the first call
-    if (nitems_read(0) == 0 && !all_tags.empty()) {
-        _active_frequency_tag = all_tags[0];
-    }
-
-    // loop through each frequency tag, and compute the number of samples corresponding to each active frequency tag
+    // Iterate through each tag and compute the number of samples for each tag interval
     for (const tag_t &tag : all_tags) {
-        // find the state of the current active tag
         float frequency_of_active_tag = pmt::to_float(_active_frequency_tag.value);
-        int abs_index_of_active_tag = _active_frequency_tag.offset;
+        uint64_t abs_index_of_active_tag = _active_frequency_tag.offset;
+        uint64_t abs_index_of_new_tag = tag.offset;
 
-        // find the absolute index of the new tag
-        int abs_index_of_new_tag = tag.offset;
+        // Compute the number of samples for the current active tag
+        uint64_t num_samples_at_active_tag = abs_index_of_new_tag - abs_index_of_active_tag;
 
-        // compute the number of samples collected at the active tag
-        int num_samples_at_active_tag = abs_index_of_new_tag - abs_index_of_active_tag;
+        // Print the frequency and the number of samples
+        std::cout << "Frequency: " << frequency_of_active_tag << std::endl;
+        std::cout << "Number of samples at active tag: " << num_samples_at_active_tag << std::endl;
 
-        // print check
-        std::cout << frequency_of_active_tag << std::endl;
-        std::cout << num_samples_at_active_tag << std::endl;
-
-        // update the active tag
+        // Update the active tag to the current tag
         _active_frequency_tag = tag;
-    }
-
-    // Compute the number of samples from the last tag to the end of the current buffer
-    if (!all_tags.empty()) {
-        int abs_index_of_last_tag = _active_frequency_tag.offset;
-        int num_samples_after_last_tag = abs_end_N - abs_index_of_last_tag;
-        float frequency_of_last_tag = pmt::to_float(_active_frequency_tag.value);
-
-        // print check for the last segment
-        std::cout << frequency_of_last_tag << std::endl;
-        std::cout << num_samples_after_last_tag << std::endl;
     }
 }
 
@@ -207,7 +210,7 @@ int batched_file_sink_impl::work(
 
     // if sweeping is activated, save the tagged info in the detached header file
     if (_sweeping) {
-        // write the tag state information to the detached header
+        // write the metadata to the detached header
         if (_hdr_file.is_open()){
             write_tag_states_to_hdr(noutput_items);
         }
