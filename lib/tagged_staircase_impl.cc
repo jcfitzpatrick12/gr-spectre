@@ -39,8 +39,8 @@ tagged_staircase_impl::tagged_staircase_impl(int min_samples_per_step,
       _max_samples_per_step(max_samples_per_step),
       _step_increment(step_increment),
       _samp_rate(samp_rate),
-      _sample_counter(0),
-      _step_counter(0),
+      _sample_index_within_step(0),
+      _step_index(0),
       _current_samples_per_step(_min_samples_per_step),
       _samp_rate_as_float(static_cast<float>(samp_rate)),
       _min_modelled_frequency(_samp_rate_as_float / 2.0f),
@@ -70,27 +70,27 @@ int tagged_staircase_impl::work(int noutput_items,
     // Type cast the output buffer to point to output_type
     output_type* optr = static_cast<output_type*>(output_items[0]);
 
-    // tag the very first sample of the stream
-    if (nitems_written(0) == 0) {
-        tag_step(0);
-    }
-    
     // Process each output item
     for (int i = 0; i < noutput_items; i++) {
+        // tag the first sample of the stream
+        if (nitems_read(0) == 0 && i == 0) {
+            tag_step(0);
+        }
+
         // Output the current step (1-based) index
-        optr[i] = output_type(static_cast<float>(_step_counter + 1), 0.0f);
+        optr[i] = output_type(static_cast<float>(_step_index + 1), 0.0f);
 
         // Increment the sample counter
-        _sample_counter++;
+        _sample_index_within_step++;
 
         // Check if the current step is complete
-        if (_sample_counter >= _current_samples_per_step) {
+        if (_sample_index_within_step >= _current_samples_per_step) {
             // tag the first sample of the new step
             tag_step(i + 1);
             // Move to the next step, reset the sample counter
-            _sample_counter = 0;
+            _sample_index_within_step = 0;
             // increment the step counter
-            _step_counter++;
+            _step_index++;
             // increment the samples per step
             _current_samples_per_step += _step_increment;
             // and increment the modelled frequnecy
@@ -99,7 +99,7 @@ int tagged_staircase_impl::work(int noutput_items,
             // reset if we exceed the maximum step size
             if (_current_samples_per_step > _max_samples_per_step) {
                 _current_samples_per_step = _min_samples_per_step;
-                _step_counter = 0;
+                _step_index = 0;
                 _current_modelled_frequency = _min_modelled_frequency;
             }
         }

@@ -20,8 +20,8 @@ private:
     int _max_samples_per_step; /**< user input */
     int _step_increment; /**< user input */
     int _samp_rate; /**< user input */
-    int _sample_counter; /**< keeps track of the index within a step */
-    int _step_counter; /**< keeps track of the index of the step */
+    int _sample_index_within_step; /**< keeps track of the index within a step */
+    int _step_index; /**< keeps track of the index of the step */
     int _current_samples_per_step; /**< keeps track of the current step length */
     float _samp_rate_as_float;  /**< Type cast sample rate as float*/
     float _min_modelled_frequency; /**< The artificially assigned center frequency assigned to the first step*/
