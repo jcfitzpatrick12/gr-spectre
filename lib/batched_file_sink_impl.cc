@@ -143,6 +143,7 @@ void batched_file_sink_impl::write_tag_states_to_hdr(int noutput_items) {
             // set the active frequency tag (ensuring that the first tagged sample is the first sample of the stream)
             if (frequency_tag.offset == 0) {
                 _active_frequency_tag = frequency_tag;
+                _is_active_frequency_tag_set = true;
             }
             else {
                 throw std::runtime_error("The first sample of the stream must be tagged with the frequency.");
