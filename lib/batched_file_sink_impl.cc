@@ -148,8 +148,7 @@ void batched_file_sink_impl::write_tag_states_to_hdr(
         float frequency_of_active_tag = pmt::to_float(_active_frequency_tag.value);
         int abs_index_of_active_tag = _active_frequency_tag.offset;
 
-        // find the state of the new tag
-        float frequency_of_new_tag = pmt::to_float(tag.value);
+        // find the absolute index of the new tag
         int abs_index_of_new_tag = tag.offset;
 
         // compute the number of samples collected at the active tag
