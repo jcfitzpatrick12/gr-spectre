@@ -129,7 +129,7 @@ void batched_file_sink_impl::write_num_samples_to_hdr(int32_t num_samples)
 
 void batched_file_sink_impl::write_tag_states_to_hdr(int noutput_items) {  
     // Compute the absolute start and end indices
-    uint64_t abs_start_N = nitems_read(0);
+    uint64_t abs_start_N = nitems_written(0);
     uint64_t abs_end_N = abs_start_N + (uint64_t)(noutput_items);
 
     // Vector to hold all tags in the current range

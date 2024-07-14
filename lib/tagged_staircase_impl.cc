@@ -71,7 +71,7 @@ int tagged_staircase_impl::work(int noutput_items,
     output_type* optr = static_cast<output_type*>(output_items[0]);
 
     // Tag the first sample of the stream
-    if (nitems_read(0) == 0) {
+    if (nitems_written(0) == 0) {
         tag_step(0);
     }
 
