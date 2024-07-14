@@ -42,6 +42,7 @@ private:
     // by definition, if a frequency tag is found at absolute index N_start, and the next tag is at absolute index N_end
     // all samples with absolute index [N_start, N_end) were collected at frequency corresponding to that tag at N_start
     tag_t _active_frequency_tag;
+    bool _is_active_frequency_tag_set; // boolean keeps track of whether the first tag has been set or not
 
 public:
     batched_file_sink_impl(
@@ -56,8 +57,8 @@ public:
     void open_file(file_type ftype); // open member function for either either the binary or header file
     void set_initial_active_tag();
     void write_ms_correction_to_hdr(); // writes the ms correction to the active hdr file as a 32-bit integer
-    void write_active_frequency_to_hdr(); // writes the active frequency to the active hdr file as a 32-bit float
-    void write_num_samples_to_hdr(); // writes the num samples for the active frequency to the active hdr file as a 32-bit integer
+    void write_active_frequency_to_hdr(float frequency); // writes the active frequency to the active hdr file as a 32-bit float
+    void write_num_samples_to_hdr(int32_t num_samples); // writes the num samples for the active frequency to the active hdr file as a 32-bit integer
     void write_tag_states_to_hdr(int noutput_items); // Write the metadata information to the detached header. 
     void write_input_buffer_to_bin(const char* in0, int noutput_items); // Write the input buffer to the active bin file. 
     int work(

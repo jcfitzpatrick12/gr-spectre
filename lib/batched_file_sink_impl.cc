@@ -36,7 +36,8 @@ batched_file_sink_impl::batched_file_sink_impl(std::string parent_dir,
       _open_new_file(true), // impose that we will open a new file at the first call of the work function
       _elapsed_time(0), // elapsed time is zero initially, by definition.
       _bch(parent_dir, tag), // create an instance of the bin chunk handler class
-      _frequency_key(pmt::string_to_symbol("rx_freq")) // declaring the frequency tag key
+      _frequency_key(pmt::string_to_symbol("rx_freq")), // declaring the frequency tag key
+      _is_active_frequency_tag_set(false) // at the first call of the work function, the first tag has not yet been set
 {
 };
 
@@ -94,23 +95,37 @@ void batched_file_sink_impl::write_ms_correction_to_hdr()
 {
     int32_t millisecond_correction = _bch.get_millisecond_correction();
     const char* millisecond_correction_bytes = reinterpret_cast<char*>(&millisecond_correction);
+    _hdr_file.write(millisecond_correction_bytes, sizeof(int32_t));
+}
 
-    if (_hdr_file.is_open()) {
-        _hdr_file.write(millisecond_correction_bytes, sizeof(int32_t));
-    } else {
-        throw std::runtime_error("Failed to write ms_correction to bin file.");
+
+void batched_file_sink_impl::write_input_buffer_to_bin(
+    const char* in0,
+    int noutput_items
+)
+{
+    /* write the entire buffer to the current active binary chunk file */
+    _bin_file.write(in0, noutput_items * sizeof(gr_complex));
+    // infer the elapsed_time from the (input) sample rate, and number of items in the buffer
+    _elapsed_time += noutput_items * (1.0 / _samp_rate);
+    // if elapsed time is greater than the (input) chunk_size, at the next iteration, we will open a new file
+    if (_elapsed_time >= _chunk_size) {
+        _open_new_file = true;
     }
 }
 
-void batched_file_sink_impl::write_active_frequency_to_hdr()
+
+void batched_file_sink_impl::write_active_frequency_to_hdr(float frequency)
 {
     // to be implemented
 }
 
-void batched_file_sink_impl::write_num_samples_to_hdr()
+
+void batched_file_sink_impl::write_num_samples_to_hdr(int32_t num_samples)
 {
     // to be implemented
 }
+
 
 void batched_file_sink_impl::write_tag_states_to_hdr(int noutput_items) {  
     // Compute the absolute start and end indices
@@ -120,45 +135,39 @@ void batched_file_sink_impl::write_tag_states_to_hdr(int noutput_items) {
     // Vector to hold all tags in the current range
     std::vector<tag_t> frequency_tags;
     get_tags_in_range(frequency_tags, 0, abs_start_N, abs_end_N, _frequency_key);
-
+    
     // Iterate through each tag and compute the number of samples for each tag interval
     for (const tag_t &frequency_tag : frequency_tags) {
-        // if we are writing the very first tag, initialise the active tag and write this to the hdr
-        if (abs_start_N == 0) {
-            _active_frequency_tag = frequency_tag;
-            write_active_frequency_to_hdr();
+        // if the first tag has not been set... initialise the active frequency tag!
+        if (!_is_active_frequency_tag_set) {
+            // set the active frequency tag (ensuring that the first tagged sample is the first sample of the stream)
+            if (frequency_tag.offset == 0) {
+                _active_frequency_tag = frequency_tag;
+            }
+            else {
+                throw std::runtime_error("The first sample of the stream must be tagged with the frequency.");
+            }
         }
-        // otherwise we have an existing tag state.
-        // so, we can compute the number of samples for the active tag state, then update the active tag
+        // otherwise we have an active frequency tag
+        // so, we can compute the number of samples then update the active tag
         else {
-            //  we have an initial tag, so we can compute the number of elements
-            int num_samples_active_frequency = frequency_tag.offset - _active_frequency_tag.offset;
-            // write the computed number of samples for the active frequency
-            write_num_samples_to_hdr();
+            // we have an initial tag, so we can compute the number of elements
+            int32_t num_samples_active_frequency = frequency_tag.offset - _active_frequency_tag.offset;
+            // write the active frequency to the hdr
+            write_active_frequency_to_hdr(pmt::to_float(_active_frequency_tag.value));
+            write_num_samples_to_hdr(num_samples_active_frequency);
+
+            // print check
             std::cout << "Frequency: " << pmt::to_float(_active_frequency_tag.value) << std::endl;
             std::cout << "Number of samples at active tag: " << num_samples_active_frequency << std::endl;
+
             // update the active frequency
             _active_frequency_tag = frequency_tag;
-            write_active_frequency_to_hdr();
+
         }
     }
 }
 
-
-void batched_file_sink_impl::write_input_buffer_to_bin(
-    const char* in0,
-    int noutput_items
-)
-{
-    // write the entire buffer to the current active binary chunk file
-    _bin_file.write(in0, noutput_items * sizeof(gr_complex));
-    // infer the elapsed_time from the (input) sample rate, and number of items in the buffer
-    _elapsed_time += noutput_items * (1.0 / _samp_rate);
-    // if elapsed time is greater than the (input) chunk_size, at the next iteration, we will open a new file
-    if (_elapsed_time >= _chunk_size) {
-        _open_new_file = true;
-    }
-}
 
 int batched_file_sink_impl::work(
     int noutput_items,
@@ -175,31 +184,18 @@ int batched_file_sink_impl::work(
     const char* in0 = static_cast<const char*>(input_items[0]);
 
     if (_open_new_file) {
-        _bch.update(); // effectivly set the header and binary file paths, and computes ms correction
+        _bch.update(); // effectivly set the header and binary file paths, and compute the ms correction
         _open_new_file = false; // impose that we won't open another file until _open_new_file is set back to true
         open_file(file_type::BIN); // open the binary file ready for the raw IQ samples
         open_file(file_type::HDR); // open the detached header ready for metadata writing
-        write_ms_correction_to_hdr(); // when the detached header is opened for the first time, write the ms_correction to it first as a 32-bit integer
+        write_ms_correction_to_hdr();
     }
 
-    // dump all the IQ samples to the binary chunk file
-    if (_bin_file.is_open()) {
-        write_input_buffer_to_bin(in0, noutput_items);
-    }
-    else {
-        throw std::runtime_error("Failed to write to bin file.");
-    }
+    write_input_buffer_to_bin(in0, noutput_items);
 
-    // if sweeping is activated, save the tagged info in the detached header file
+    // if sweeping is activated, we will save the tag information in the detached header
     if (_sweeping) {
-        // write the metadata to the detached header
-        if (_hdr_file.is_open()){
-            write_tag_states_to_hdr(noutput_items);
-        }
-        else {
-            throw std::runtime_error("Failed to write to hdr file.");
-        }
-        
+        write_tag_states_to_hdr(noutput_items);
     }
     return noutput_items;
 };
