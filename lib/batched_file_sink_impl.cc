@@ -159,8 +159,8 @@ void batched_file_sink_impl::write_tag_states_to_hdr(int noutput_items) {
             write_num_samples_to_hdr(num_samples_active_frequency);
 
             // print check
-            std::cout << "Frequency: " << pmt::to_float(_active_frequency_tag.value) << std::endl;
-            std::cout << "Number of samples at active tag: " << num_samples_active_frequency << std::endl;
+            std::cout << "Active frequency: " << pmt::to_float(_active_frequency_tag.value) << std::endl;
+            std::cout << "Active frequency offset: " <<  _active_frequency_tag.offset << std::endl;
 
             // update the active frequency
             _active_frequency_tag = frequency_tag;
