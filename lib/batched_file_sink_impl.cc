@@ -112,63 +112,35 @@ void batched_file_sink_impl::write_num_samples_to_hdr()
     // to be implemented
 }
 
-
-void batched_file_sink_impl::set_initial_active_tag() 
-{
-    // prepare a vector to hold all the tags in the current range of the work functio
-    std::vector<tag_t> vector_containing_first_tag;
-    // essentially fetch a vector which contains the tag of the first sample if it exists, and is empty otherwise
-    get_tags_in_range(vector_containing_first_tag, 0, 0, 1, _frequency_key);
-    // if the first sample is not tagged, throw a runtime error
-    if (vector_containing_first_tag.empty()) {
-        throw std::runtime_error("First sample is missing a tag!");
-    }
-    else {
-        for (const tag_t &first_tag : vector_containing_first_tag) {
-            _active_frequency_tag = first_tag;
-        }
-    }
-}
-
 void batched_file_sink_impl::write_tag_states_to_hdr(int noutput_items) {  
-    // Check if this is the first call to the work function
-    if (nitems_read(0) == 0) {
-        set_initial_active_tag();
-        std::cout << "Setting intial tag" << std::endl;
-        std::cout << std::endl;
-    }
-
     // Compute the absolute start and end indices
-    uint64_t abs_start_N = std::max(1, (int)(nitems_read(0)));
+    uint64_t abs_start_N = nitems_read(0);
     uint64_t abs_end_N = abs_start_N + (uint64_t)(noutput_items);
 
     // Vector to hold all tags in the current range
-    std::vector<tag_t> all_tags;
-    get_tags_in_range(all_tags, 0, abs_start_N, abs_end_N, _frequency_key);
+    std::vector<tag_t> frequency_tags;
+    get_tags_in_range(frequency_tags, 0, abs_start_N, abs_end_N, _frequency_key);
 
-    // Print the initial tag state
-    std::cout << "tag tag state pre-loop:" << std::endl;
-    std::cout << "Active tag frequency" << pmt::to_float(_active_frequency_tag.value) << std::endl;
-    std::cout << "Active tag offset: " << _active_frequency_tag.offset << std::endl;
-    std::cout << std::endl;
-
-    std::cout << "Now looping..." << std::endl;
     // Iterate through each tag and compute the number of samples for each tag interval
-    for (const tag_t &tag : all_tags) {
-        std::cout << "Active tag frequency" << pmt::to_float(_active_frequency_tag.value) << std::endl;
-        std::cout << "Active tag offset: " << _active_frequency_tag.offset << std::endl;
-        // Update the active tag to the current tag
-        _active_frequency_tag = tag;
-        // float frequency_of_active_tag = pmt::to_float(_active_frequency_tag.value);
-        // uint64_t abs_index_of_active_tag = _active_frequency_tag.offset;
-        // uint64_t abs_index_of_new_tag = tag.offset;
-
-        // // Compute the number of samples for the current active tag
-        // uint64_t num_samples_at_active_tag = abs_index_of_new_tag - abs_index_of_active_tag;
-
-        // // Print the frequency and the number of samples
-        // std::cout << "Frequency: " << frequency_of_active_tag << std::endl;
-        // std::cout << "Number of samples at active tag: " << num_samples_at_active_tag << std::endl;
+    for (const tag_t &frequency_tag : frequency_tags) {
+        // if we are writing the very first tag, initialise the active tag and write this to the hdr
+        if (abs_start_N == 0) {
+            _active_frequency_tag = frequency_tag;
+            write_active_frequency_to_hdr();
+        }
+        // otherwise we have an existing tag state.
+        // so, we can compute the number of samples for the active tag state, then update the active tag
+        else {
+            //  we have an initial tag, so we can compute the number of elements
+            int num_samples_active_frequency = frequency_tag.offset - _active_frequency_tag.offset;
+            // write the computed number of samples for the active frequency
+            write_num_samples_to_hdr();
+            std::cout << "Frequency: " << pmt::to_float(_active_frequency_tag.value) << std::endl;
+            std::cout << "Number of samples at active tag: " << num_samples_active_frequency << std::endl;
+            // update the active frequency
+            _active_frequency_tag = frequency_tag;
+            write_active_frequency_to_hdr();
+        }
     }
 }
 
