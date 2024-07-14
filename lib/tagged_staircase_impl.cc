@@ -72,6 +72,7 @@ int tagged_staircase_impl::work(int noutput_items,
 
     // Tag the first sample of the stream
     if (nitems_written(0) == 0) {
+        // tag the first step
         tag_step(0);
     }
 
@@ -92,9 +93,6 @@ int tagged_staircase_impl::work(int noutput_items,
             // Increment the samples per step
             _current_samples_per_step += _step_increment;
 
-            // Tag the first sample of the new step
-            tag_step(i + 1);
-
             // Increment the modelled frequency
             _current_modelled_frequency += _samp_rate_as_float;
 
@@ -104,6 +102,10 @@ int tagged_staircase_impl::work(int noutput_items,
                 _step_index = 0;
                 _current_modelled_frequency = _min_modelled_frequency;
             }
+
+            // Tag the first sample of the new step
+            tag_step(i + 1);
+
         }
     }
 
