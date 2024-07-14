@@ -138,9 +138,6 @@ void batched_file_sink_impl::write_tag_states_to_hdr(int noutput_items) {
     
     // Iterate through each tag and compute the number of samples for each tag interval
     for (const tag_t &frequency_tag : frequency_tags) {
-
-        std::cout << "Frequency tag: " << pmt::to_float( frequency_tag.value) << std::endl;
-        std::cout << "Frequency tag offset: " << frequency_tag.offset << std::endl;
         // if the first tag has not been set... initialise the active frequency tag!
         if (!_is_active_frequency_tag_set) {
             // set the active frequency tag (ensuring that the first tagged sample is the first sample of the stream)
