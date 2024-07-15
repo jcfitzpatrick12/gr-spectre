@@ -150,8 +150,8 @@ void batched_file_sink_impl::write_tag_states_to_hdr(int noutput_items) {
         // Compute the active frequency 
         float active_frequency = pmt::to_float(_active_frequency_tag.value);
         // // print check
-        // std::cout << "Active frequency: " << active_frequency << std::endl;
-        // std::cout << "Num samples: " << num_samples_active_frequency <<std::endl;
+        std::cout << "Active frequency: " << active_frequency << std::endl;
+        std::cout << "Num samples: " << num_samples_active_frequency <<std::endl;
         // and write to file
         write_to_file(_hdr_file, &active_frequency, sizeof(float));
         write_to_file(_hdr_file, &num_samples_active_frequency, sizeof(int32_t));
@@ -176,8 +176,8 @@ void batched_file_sink_impl::write_tag_states_to_hdr(int noutput_items) {
         // Compute the active frequency 
         float active_frequency = pmt::to_float(_active_frequency_tag.value);
         // // print check
-        // std::cout << "Dangling frequency: " << active_frequency << std::endl;
-        // std::cout << "Samples remaining: " << num_samples_remaining <<std::endl;
+        std::cout << "Dangling frequency: " << active_frequency << std::endl;
+        std::cout << "Samples remaining: " << num_samples_remaining <<std::endl;
         // write this to file
         write_to_file(_hdr_file, &active_frequency, sizeof(float));
         write_to_file(_hdr_file, &num_samples_remaining, sizeof(int32_t));
