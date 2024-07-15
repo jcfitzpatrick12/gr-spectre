@@ -56,9 +56,6 @@ int sweep_driver_impl::work(int noutput_items,
                             gr_vector_const_void_star& input_items,
                             gr_vector_void_star& output_items)
 {
-    // Type cast the input buffer to point to input_type
-    const input_type* in0 = static_cast<const input_type*>(input_items[0]);
-
     // Process each output item
     for (int i = 0; i < noutput_items; i++) {
         // Increment sample index within the step
