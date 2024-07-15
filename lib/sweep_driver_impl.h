@@ -16,13 +16,13 @@ namespace spectre {
 class sweep_driver_impl : public sweep_driver
 {
 private:
-    float _min_freq; /**< The lower bound for the frequency sweep. */
-    float _max_freq; /**< The upper bound for the frequency sweep. */
-    float _freq_step; /**< Step _freq_step [Hz] after collecting _samples_per_step samples. */
-    int _samp_rate; /**< The (imposed) sample rate.*/
-    int _samples_per_step; /**< The number of samples to collect at each step.*/
-    int _sample_counter; /**< To keep track of the sample count at each step.*/
-    float _freq0; /**< The frequency at which we start the steps, based on min_freq. */
+    const float _min_freq; /**< User input. The lower bound for the frequency sweep. */
+    const float _max_freq; /**< User input. The upper bound for the frequency sweep. */
+    const float _freq_step; /**< User input. Step _freq_step [Hz] after collecting _samples_per_step samples. */
+    const int _samp_rate; /**< User input. The (imposed) sample rate. */
+    const int _samples_per_step; /**< User input. The number of samples per step. */
+    const float _freq0; /**< The frequency at which we start the steps, based on min_freq. */
+    int _sample_index_within_step; /**< 0-indexes the sample within the step. */
     float _current_freq; /**< Stores the current active frequency. */
 
 public:

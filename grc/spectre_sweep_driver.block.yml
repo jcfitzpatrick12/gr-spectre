@@ -41,9 +41,6 @@ inputs:
     vlen: 1
 
 outputs:
-  - domain: stream
-    dtype: float
-    vlen: 3
   - domain: message
     id: freq
     optional: true
