@@ -9,8 +9,8 @@ bin_chunk_helper::bin_chunk_helper(
     std::string parent_path,
     std::string tag
 ){
-    _parent_path = fs::path(parent_path);
-    _tag = tag;
+    _parent_path = fs::path(parent_path); // convert the user inputted string parent path to a path object
+    _tag = tag; // set as is with the user inputted string
 };
 
 bin_chunk_helper::~bin_chunk_helper(){};
