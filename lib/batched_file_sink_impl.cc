@@ -104,11 +104,11 @@ void batched_file_sink_impl::ensure_first_sample_is_tagged()
     {
         if (_is_active_frequency_tag_set)
         {
-            const uint64_t absolute_offset = nitems_read(0);
-            const pmt::pmt_t key = _frequency_key;
-            const pmt::pmt_t value = _active_frequency_tag.value;
-            const pmt::pmt_t srcid = pmt::string_to_symbol(alias());
-            add_item_tag(0, absolute_offset, key, value, srcid);
+            // const uint64_t absolute_offset = nitems_read(0);
+            // const pmt::pmt_t key = _frequency_key;
+            // const pmt::pmt_t value = _active_frequency_tag.value;
+            // const pmt::pmt_t srcid = pmt::string_to_symbol(alias());
+            // add_item_tag(0, absolute_offset, key, value, srcid);
         }
         else
         {
