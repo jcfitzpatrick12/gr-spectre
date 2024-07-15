@@ -128,12 +128,12 @@ void batched_file_sink_impl::write_tag_states_to_hdr(int noutput_items) {
     // Compute the absolute start and end indices
     // we know the first tag is sampled, so skip that!
     uint64_t abs_start_N = nitems_read(0) + 1;
-    // // and infer the absolute end index from the number of output_items considered at this call of the work function
-    // uint64_t abs_end_N = abs_start_N + noutput_items;
+    // and infer the absolute end index from the number of output_items considered at this call of the work function
+    uint64_t abs_end_N = abs_start_N + noutput_items;
 
-    // // Vector to hold all tags in the current range
-    // std::vector<tag_t> frequency_tags;
-    // get_tags_in_range(frequency_tags, 0, abs_start_N, abs_end_N, _frequency_key);
+    // Vector to hold all tags in the current range
+    std::vector<tag_t> frequency_tags;
+    get_tags_in_range(frequency_tags, 0, abs_start_N, abs_end_N, _frequency_key);
     
     // // Iterate through each tag and compute the number of samples for each tag interval
     // for (const tag_t &frequency_tag : frequency_tags) {
