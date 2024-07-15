@@ -55,7 +55,7 @@ public:
 
     ~batched_file_sink_impl();// Destructor.
     void open_file(file_type ftype); // open member function for either either the binary or header file
-    void ensure_first_sample_is_tagged(); // ensure the first sample is tagged when opening a new file
+    void set_initial_active_frequency_tag(); // ensure the first sample is tagged when opening a new file
 
     // Template function for writing to the detached header
     template<typename T>

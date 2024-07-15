@@ -91,65 +91,79 @@ void batched_file_sink_impl::open_file(file_type ftype) {
         throw std::runtime_error("Failed to open file: " + file_path.string());
     }
 }
-void batched_file_sink_impl::ensure_first_sample_is_tagged() 
+void batched_file_sink_impl::set_initial_active_frequency_tag() 
 {      
     // at this particular call of the work function, find the absolute start index of the first sample
-    uint64_t abs_start_N = nitems_read(0);
-    // now populate a vector which will contain one element if the first sample is tagged, and is empty otherwise
-    uint64_t abs_end_N = abs_start_N + 1;
-    std::vector<tag_t> vector_frequency_tag_of_first_sample;
-    get_tags_in_range(vector_frequency_tag_of_first_sample, 0, abs_start_N, abs_end_N, _frequency_key);
-    
-    if (vector_frequency_tag_of_first_sample.empty())
-    {
-        if (_is_active_frequency_tag_set)
-        {
-            const uint64_t absolute_offset = nitems_read(0);
-            const pmt::pmt_t key = _frequency_key;
-            const pmt::pmt_t value = _active_frequency_tag.value;
-            const pmt::pmt_t srcid = pmt::string_to_symbol(alias());
-            add_item_tag(0, absolute_offset, key, value, srcid);
+    uint64_t abs_start_index = nitems_read(0);
+    // since get_tags_in_range operates on the absolute interval [start,end), consider abs_end_index = abs_start_index + 1 to isolate the first sample
+    uint64_t abs_end_index = abs_start_index + 1;
+    // now populate a vector, v, which will contain one element if the first sample is tagged, and is empty otherwise
+    std::vector<tag_t> vector_wrapped_first_sample_tag;
+    get_tags_in_range(vector_wrapped_first_sample_tag, 0, abs_start_index, abs_end_index, _frequency_key);
+    // inspect whether the first sample has a tag or not
+    bool first_sample_has_tag = !vector_wrapped_first_sample_tag.empty();
 
-            // make this tag the active tag
+    // if the active frequency has already been set, update the offset to coincide with the first sample as of this call to the work function
+    if (_is_active_frequency_tag_set) 
+    {
+        _active_frequency_tag.offset = nitems_read(0);
+    }
+    // otherwise the active frequency has not yet been set
+    else 
+    {   
+        // if the first sample has a tag, use this to update the active frequency tag 
+        if (first_sample_has_tag)
+        {
+            _active_frequency_tag = vector_wrapped_first_sample_tag[0];
         }
+
+        // Otherwise, we have an undefined tag state.
+        /*
+        Why is this undefined? We need to know the frequency corresponding to each IQ sample in the stream. 
+        Consider two neighbouring frequency tags, tag_i and tag_j, with absolute indices i and j, where i < j. 
+        All samples z_k, with k in [i, j), correspond to the frequency tag_i.value. 
+
+        Therefore, for any IQ sample z_k in the stream, there exists a tag tag_i where i <= k, which we call the 
+        active tag for z_k. From this, the first sample (z_0) must have a corresponding tag at absolute index 0. 
+        If _is_active_frequency_tag_set is false (i.e. during the first call of the work function) and the first sample 
+        is not tagged, we cannot determine its corresponding frequency, leading to an undefined state.
+        */
         else
         {
-           throw std::runtime_error("First sample in the stream must be frequency tagged!");
+            throw std::runtime_error("Undefined tag state, the first sample in the stream must be frequency tagged!");
         }
     }
-
-    // otherwise the first sample is tagged, and we have nothing to do!
 }
 
 
 
 
 void batched_file_sink_impl::write_tag_states_to_hdr(int noutput_items) {  
-    // Compute the absolute start and end indices
-    // we know the first tag is sampled, so skip that!
-    uint64_t abs_start_N = nitems_read(0) + 1;
-    // and infer the absolute end index from the number of output_items considered at this call of the work function
-    uint64_t abs_end_N = abs_start_N + noutput_items;
+    // // Compute the absolute start and end indices
+    // // The first tag is sampled, so skip that! We don't need to handle it twice.
+    // uint64_t abs_start_N = nitems_read(0) + 1;
+    // // and infer the absolute end index from the number of output_items considered at this call of the work function
+    // uint64_t abs_end_N = abs_start_N + noutput_items;
 
-    // Vector to hold all tags in the current range
-    std::vector<tag_t> frequency_tags;
-    get_tags_in_range(frequency_tags, 0, abs_start_N, abs_end_N, _frequency_key);
+    // // Vector to hold all tags in the current range
+    // std::vector<tag_t> frequency_tags;
+    // get_tags_in_range(frequency_tags, 0, abs_start_N, abs_end_N, _frequency_key);
     
-    // Iterate through each tag and compute the number of samples for each tag interval
-    for (const tag_t &frequency_tag : frequency_tags) {
-        // Compute the number of samples then update the active tag
-        int32_t num_samples_active_frequency = frequency_tag.offset - _active_frequency_tag.offset;
-        // Compute the active frequency 
-        // float active_frequency = pmt::to_float(_active_frequency_tag.value);
-        // std::cout << "Active frequency: " << active_frequency << std::endl;
-        // std::cout << "Num samples: " << num_samples_active_frequency <<std::endl;
+    // // Iterate through each tag and compute the number of samples for each tag interval
+    // for (const tag_t &frequency_tag : frequency_tags) {
+    //     // Compute the number of samples then update the active tag
+    //     int32_t num_samples_active_frequency = frequency_tag.offset - _active_frequency_tag.offset;
+    //     // Compute the active frequency 
+    //     float active_frequency = pmt::to_float(_active_frequency_tag.value);
+    //     std::cout << "Active frequency: " << active_frequency << std::endl;
+    //     std::cout << "Num samples: " << num_samples_active_frequency <<std::endl;
 
-        // // and write to file
-        // write_to_file(_hdr_file, &active_frequency, sizeof(float));
-        // write_to_file(_hdr_file, &num_samples_active_frequency, sizeof(int32_t));
-        // // Update the active frequency
-        // _active_frequency_tag = frequency_tag;
-    }
+    //     // and write to file
+    //     write_to_file(_hdr_file, &active_frequency, sizeof(float));
+    //     write_to_file(_hdr_file, &num_samples_active_frequency, sizeof(int32_t));
+    //     // Update the active frequency
+    //     _active_frequency_tag = frequency_tag;
+    // }
 
     // // if _open_new_file is set to true, we need to do some clean-up before opening the next file at the next call of the work function
     // if (_open_new_file) 
@@ -183,7 +197,9 @@ int batched_file_sink_impl::work(
         open_file(file_type::HDR); // open the detached header ready for metadata writing
         int32_t millisecond_correction = _bch.get_millisecond_correction(); // extract the millisecond correction and write to the detached header
         write_to_file(_hdr_file, &millisecond_correction, sizeof(int32_t)); 
-        ensure_first_sample_is_tagged(); // inspect the first sample at the first call of the work function after opening a new file
+        if (_sweeping) {
+            set_initial_active_frequency_tag();
+        }
     }
 
     /* dump the contents input buffer to the bin file */
