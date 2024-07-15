@@ -93,30 +93,30 @@ void batched_file_sink_impl::open_file(file_type ftype) {
 }
 void batched_file_sink_impl::ensure_first_sample_is_tagged() 
 {      
-    // at this particular call of the work function, find the absolute start index of the first sample
-    uint64_t abs_start_N = nitems_read(0);
-    // now populate a vector which will contain one element if the first sample is tagged, and is empty otherwise
-    uint64_t abs_end_N = abs_start_N + 1;
-    std::vector<tag_t> vector_frequency_tag_of_first_sample;
-    get_tags_in_range(vector_frequency_tag_of_first_sample, 0, abs_start_N, abs_end_N, _frequency_key);
+    // // at this particular call of the work function, find the absolute start index of the first sample
+    // uint64_t abs_start_N = nitems_read(0);
+    // // now populate a vector which will contain one element if the first sample is tagged, and is empty otherwise
+    // uint64_t abs_end_N = abs_start_N + 1;
+    // std::vector<tag_t> vector_frequency_tag_of_first_sample;
+    // get_tags_in_range(vector_frequency_tag_of_first_sample, 0, abs_start_N, abs_end_N, _frequency_key);
     
-    if (vector_frequency_tag_of_first_sample.empty())
-    {
-        if (_is_active_frequency_tag_set)
-        {
-            const uint64_t absolute_offset = nitems_read(0);
-            const pmt::pmt_t key = _frequency_key;
-            const pmt::pmt_t value = _active_frequency_tag.value;
-            const pmt::pmt_t srcid = pmt::string_to_symbol(alias());
-            add_item_tag(0, absolute_offset, key, value, srcid);
-        }
-        else
-        {
-           throw std::runtime_error("First sample in the stream must be frequency tagged!");
-        }
-    }
+    // if (vector_frequency_tag_of_first_sample.empty())
+    // {
+    //     if (_is_active_frequency_tag_set)
+    //     {
+    //         const uint64_t absolute_offset = nitems_read(0);
+    //         const pmt::pmt_t key = _frequency_key;
+    //         const pmt::pmt_t value = _active_frequency_tag.value;
+    //         const pmt::pmt_t srcid = pmt::string_to_symbol(alias());
+    //         add_item_tag(0, absolute_offset, key, value, srcid);
+    //     }
+    //     else
+    //     {
+    //        throw std::runtime_error("First sample in the stream must be frequency tagged!");
+    //     }
+    // }
 
-    // otherwise the first sample is tagged, and we have nothing to do!
+    // // otherwise the first sample is tagged, and we have nothing to do!
 }
 
 
