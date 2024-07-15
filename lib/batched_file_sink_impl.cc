@@ -130,10 +130,14 @@ void batched_file_sink_impl::set_initial_active_frequency_tag()
             throw std::runtime_error("Undefined tag state, the first sample in the stream must be frequency tagged!");
         }
     }
+    // update member variable to note that the active tag is now set
+    _is_active_frequency_tag_set = true;
 }
 
 void batched_file_sink_impl::write_tag_states_to_hdr(int noutput_items) {  
-    int abs_start_index  = nitems_read(0);
+    // search for tags subsequent to the current active tag
+    int abs_start_index  = _active_frequency_tag.offset + 1;
+    // up until the current range of the work function
     int abs_end_index = nitems_read(0) + noutput_items;
     // Vector to hold all tags in the current range of the work function
     std::vector<tag_t> frequency_tags;
