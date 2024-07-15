@@ -125,9 +125,9 @@ void batched_file_sink_impl::ensure_first_sample_is_tagged()
 
 
 void batched_file_sink_impl::write_tag_states_to_hdr(int noutput_items) {  
-    // // Compute the absolute start and end indices
-    // // we know the first tag is sampled, so skip that!
-    // uint64_t abs_start_N = nitems_read(0) + 1;
+    // Compute the absolute start and end indices
+    // we know the first tag is sampled, so skip that!
+    uint64_t abs_start_N = nitems_read(0) + 1;
     // // and infer the absolute end index from the number of output_items considered at this call of the work function
     // uint64_t abs_end_N = abs_start_N + noutput_items;
 
