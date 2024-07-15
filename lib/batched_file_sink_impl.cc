@@ -146,11 +146,11 @@ void batched_file_sink_impl::write_tag_states_to_hdr(int noutput_items) {
         float active_frequency = pmt::to_float(_active_frequency_tag.value);
         std::cout << "Active frequency: " << active_frequency << std::endl;
         std::cout << "Num samples: " << num_samples_active_frequency <<std::endl;
-        // // and write to file
-        // write_to_file(_hdr_file, &active_frequency, sizeof(float));
-        // write_to_file(_hdr_file, &num_samples_active_frequency, sizeof(int32_t));
-        // // Update the active frequency
-        // _active_frequency_tag = frequency_tag;
+        // and write to file
+        write_to_file(_hdr_file, &active_frequency, sizeof(float));
+        write_to_file(_hdr_file, &num_samples_active_frequency, sizeof(int32_t));
+        // Update the active frequency
+        _active_frequency_tag = frequency_tag;
     }
 
     // // if _open_new_file is set to true, we need to do some clean-up before opening the next file at the next call of the work function
