@@ -157,44 +157,43 @@ void batched_file_sink_impl::write_tag_states_to_hdr(int noutput_items) {
         _active_frequency_tag = frequency_tag;
     }
 
-    // // if _open_new_file is set to true, we need to do some clean-up before opening the next file at the next call of the work function
-    // if (_open_new_file) 
-    // {
-    //     // compute the number of remaining samples and write to the header file ...
-    //     int32_t num_samples_remaining = (nitems_written(0) + noutput_items) - _active_frequency_tag.offset;
-    //     // Compute the active frequency 
-    //     float active_frequency = pmt::to_float(_active_frequency_tag.value);
-    //     std::cout << "Dangling frequency: " << active_frequency << std::endl;
-    //     std::cout << "Samples remaining: " << num_samples_remaining <<std::endl;
-    //     // write this to file
-    //     write_to_file(_hdr_file, &active_frequency, sizeof(float));
-    //     write_to_file(_hdr_file, &num_samples_remaining, sizeof(int32_t));
-    //     // don't update the active frequency, as we will use this during inspect_first_sample at the next call of the work function
-    // }
+    // if _open_new_file is set to true, we need to do some clean-up before opening the next file at the next call of the work function
+    if (_open_new_file) 
+    {
+        // compute the number of remaining samples and write to the header file ...
+        int32_t num_samples_remaining = (nitems_read(0) + noutput_items) - _active_frequency_tag.offset;
+        // Compute the active frequency 
+        float active_frequency = pmt::to_float(_active_frequency_tag.value);
+        std::cout << "Dangling frequency: " << active_frequency << std::endl;
+        std::cout << "Samples remaining: " << num_samples_remaining <<std::endl;
+        // write this to file
+        write_to_file(_hdr_file, &active_frequency, sizeof(float));
+        write_to_file(_hdr_file, &num_samples_remaining, sizeof(int32_t));
+        // don't update the active frequency, as we will use this during inspect_first_sample at the next call of the work function
+    }
 }
 
 int batched_file_sink_impl::work(
     int noutput_items,
     gr_vector_const_void_star& input_items,
     gr_vector_void_star& output_items
-) {  
-    // std::cout << nitems_read(0) << std::endl;
-    // std::cout << nitems_written(0) << std::endl;
-
+) {
     if (_open_new_file) {
         _open_new_file = false; // ensure we won't open another file until _open_new_file is set back to true
-        _bch.update(); // effectively set the header and binary file paths, and compute the ms correctione
+        _bch.update(); // effectively set the header and binary file paths, and compute the ms correction
         open_file(file_type::BIN); // open the binary file ready for the raw IQ samples
         open_file(file_type::HDR); // open the detached header ready for metadata writing
         int32_t millisecond_correction = _bch.get_millisecond_correction(); // extract the millisecond correction and write to the detached header
-        write_to_file(_hdr_file, &millisecond_correction, sizeof(int32_t)); 
+        write_to_file(_hdr_file, &millisecond_correction, sizeof(int32_t));
+        _elapsed_time = 0; // Reset elapsed time when a new file is opened
+        
         if (_sweeping) {
             set_initial_active_frequency_tag();
         }
     }
 
     /* dump the contents input buffer to the bin file */
-    write_to_file(_bin_file, input_items[0], sizeof(gr_complex)*noutput_items);
+    write_to_file(_bin_file, input_items[0], sizeof(gr_complex) * noutput_items);
 
     /* inferring elapsed time based on the number of samples processed */
     _elapsed_time += noutput_items * (1.0 / _samp_rate);
