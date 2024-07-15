@@ -26,14 +26,14 @@ sweep_driver_impl::sweep_driver_impl(
     : gr::sync_block("synced_sweep_driver",
                      gr::io_signature::make(1, 1, sizeof(input_type)),
                      gr::io_signature::make(0, 0, 0)),
-    _min_freq(min_freq),
-    _max_freq(max_freq),
-    _freq_step(freq_step),
-    _samp_rate(samp_rate),
-    _samples_per_step(samples_per_step),
-    _freq0(compute_freq0()),
-    _sample_index_within_step(0),
-    _current_freq(_freq0)
+    _min_freq(min_freq), // set with user input
+    _max_freq(max_freq), // set with user input
+    _freq_step(freq_step), // set with user input
+    _samp_rate(samp_rate), // set with user input
+    _samples_per_step(samples_per_step), // set with user input
+    _freq0(compute_freq0()), // compute based on user input
+    _sample_index_within_step(0), // by convention, the initial sample index within the step is 0
+    _current_freq(_freq0) // the current frequency is initially the computed _freq0
 {   
     // declare message port
     message_port_register_out(pmt::mp("freq"));
