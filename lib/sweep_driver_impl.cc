@@ -37,8 +37,6 @@ sweep_driver_impl::sweep_driver_impl(
 {   
     // declare message port
     message_port_register_out(pmt::mp("freq"));
-    // and publish the (initial) current tuning frequency
-    publish_current_freq();
 }
 
 sweep_driver_impl::~sweep_driver_impl() {}
@@ -58,30 +56,36 @@ int sweep_driver_impl::work(int noutput_items,
                             gr_vector_const_void_star& input_items,
                             gr_vector_void_star& output_items)
 {
+    // Type cast the input buffer to point to input_type
+    const input_type* in0 = static_cast<const input_type*>(input_items[0]);
 
-    // loop through each sample in the input buffer
-    for (int k = 0; k < noutput_items; k++) {
-        // if the index of the current sample (within the step) exceeds the samples per step
-        // then increment to the next step
+    // Process each output item
+    for (int i = 0; i < noutput_items; i++) {
+        // Increment sample index within the step
+        _sample_index_within_step++;
+
+        // Check if the current step is complete
         if (_sample_index_within_step >= _samples_per_step) {
-            // reset the sample index within the step
+            // Reset the sample index within the step
             _sample_index_within_step = 0;
-            // increment the output frequency of sweep driver
+            // Increment the output frequency of sweep driver
             _current_freq += _freq_step;
-            // if the incremented frequency is larger than the maximum frequency
+
+            // If the incremented frequency is larger than the maximum frequency
             // imposed by the user, then reset the output frequency to _freq0
             if (_current_freq > _max_freq) {
                 _current_freq = _freq0;
             }
-            // publish the frequency of the current step
+
+            // Publish the frequency of the current step
             publish_current_freq();
         }
-
-        // increment sample index within the step
-        _sample_index_within_step++;
     }
+
+    // Return the number of output items produced
     return noutput_items;
 }
+
 
 
 } /* namespace spectre */
