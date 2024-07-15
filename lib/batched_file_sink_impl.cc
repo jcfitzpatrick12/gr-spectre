@@ -93,13 +93,9 @@ void batched_file_sink_impl::open_file(file_type ftype) {
 }
 void batched_file_sink_impl::set_initial_active_frequency_tag() 
 {      
-    // at this particular call of the work function, find the absolute start index of the first sample
-    uint64_t abs_start_index = nitems_read(0);
-    // since get_tags_in_range operates on the absolute interval [start,end), consider abs_end_index = abs_start_index + 1 to isolate the first sample
-    uint64_t abs_end_index = abs_start_index + 1;
     // now populate a vector, v, which will contain one element if the first sample is tagged, and is empty otherwise
     std::vector<tag_t> vector_wrapped_first_sample_tag;
-    get_tags_in_range(vector_wrapped_first_sample_tag, 0, abs_start_index, abs_end_index, _frequency_key);
+    get_tags_in_window(vector_wrapped_first_sample_tag, 0, 0, 1, _frequency_key);
     // inspect whether the first sample has a tag or not
     bool first_sample_has_tag = !vector_wrapped_first_sample_tag.empty();
 
@@ -139,31 +135,23 @@ void batched_file_sink_impl::set_initial_active_frequency_tag()
 
 
 void batched_file_sink_impl::write_tag_states_to_hdr(int noutput_items) {  
-    // // Compute the absolute start and end indices
-    // // The first tag is sampled, so skip that! We don't need to handle it twice.
-    // uint64_t abs_start_N = nitems_read(0) + 1;
-    // // and infer the absolute end index from the number of output_items considered at this call of the work function
-    // uint64_t abs_end_N = abs_start_N + noutput_items;
-
-    // // Vector to hold all tags in the current range
-    // std::vector<tag_t> frequency_tags;
-    // get_tags_in_range(frequency_tags, 0, abs_start_N, abs_end_N, _frequency_key);
-    
-    // // Iterate through each tag and compute the number of samples for each tag interval
-    // for (const tag_t &frequency_tag : frequency_tags) {
-    //     // Compute the number of samples then update the active tag
-    //     int32_t num_samples_active_frequency = frequency_tag.offset - _active_frequency_tag.offset;
-    //     // Compute the active frequency 
-    //     float active_frequency = pmt::to_float(_active_frequency_tag.value);
-    //     std::cout << "Active frequency: " << active_frequency << std::endl;
-    //     std::cout << "Num samples: " << num_samples_active_frequency <<std::endl;
-
-    //     // and write to file
-    //     write_to_file(_hdr_file, &active_frequency, sizeof(float));
-    //     write_to_file(_hdr_file, &num_samples_active_frequency, sizeof(int32_t));
-    //     // Update the active frequency
-    //     _active_frequency_tag = frequency_tag;
-    // }
+    // Vector to hold all tags in the current range of the work function
+    std::vector<tag_t> frequency_tags;
+    get_tags_in_range(frequency_tags, 0, 0, noutput_items, _frequency_key);
+    // Iterate through each tag and compute the number of samples for each tag interval
+    for (const tag_t &frequency_tag : frequency_tags) {
+        // Compute the number of samples then update the active tag
+        int32_t num_samples_active_frequency = frequency_tag.offset - _active_frequency_tag.offset;
+        // Compute the active frequency 
+        float active_frequency = pmt::to_float(_active_frequency_tag.value);
+        std::cout << "Active frequency: " << active_frequency << std::endl;
+        std::cout << "Num samples: " << num_samples_active_frequency <<std::endl;
+        // // and write to file
+        // write_to_file(_hdr_file, &active_frequency, sizeof(float));
+        // write_to_file(_hdr_file, &num_samples_active_frequency, sizeof(int32_t));
+        // // Update the active frequency
+        // _active_frequency_tag = frequency_tag;
+    }
 
     // // if _open_new_file is set to true, we need to do some clean-up before opening the next file at the next call of the work function
     // if (_open_new_file) 
@@ -178,7 +166,6 @@ void batched_file_sink_impl::write_tag_states_to_hdr(int noutput_items) {
     //     write_to_file(_hdr_file, &active_frequency, sizeof(float));
     //     write_to_file(_hdr_file, &num_samples_remaining, sizeof(int32_t));
     //     // don't update the active frequency, as we will use this during inspect_first_sample at the next call of the work function
-
     // }
 }
 
