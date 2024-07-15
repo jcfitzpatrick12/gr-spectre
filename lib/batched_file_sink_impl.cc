@@ -92,10 +92,11 @@ void batched_file_sink_impl::open_file(file_type ftype) {
     }
 }
 void batched_file_sink_impl::set_initial_active_frequency_tag() 
-{      
+{    
+    int first_sample_abs_index = nitems_read(0);
     // now populate a vector, v, which will contain one element if the first sample is tagged, and is empty otherwise
     std::vector<tag_t> vector_wrapped_first_sample_tag;
-    get_tags_in_window(vector_wrapped_first_sample_tag, 0, 0, 1, _frequency_key);
+    get_tags_in_range(vector_wrapped_first_sample_tag, 0, first_sample_abs_index, first_sample_abs_index + 1, _frequency_key);
     // inspect whether the first sample has a tag or not
     bool first_sample_has_tag = !vector_wrapped_first_sample_tag.empty();
 
@@ -131,13 +132,12 @@ void batched_file_sink_impl::set_initial_active_frequency_tag()
     }
 }
 
-
-
-
 void batched_file_sink_impl::write_tag_states_to_hdr(int noutput_items) {  
+    int abs_start_index  = nitems_read(0);
+    int abs_end_index = nitems_read(0) + noutput_items;
     // Vector to hold all tags in the current range of the work function
     std::vector<tag_t> frequency_tags;
-    get_tags_in_range(frequency_tags, 0, 0, noutput_items, _frequency_key);
+    get_tags_in_range(frequency_tags, 0, abs_start_index, abs_end_index, _frequency_key);
     // Iterate through each tag and compute the number of samples for each tag interval
     for (const tag_t &frequency_tag : frequency_tags) {
         // Compute the number of samples then update the active tag
