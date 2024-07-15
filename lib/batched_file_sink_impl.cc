@@ -142,14 +142,16 @@ void batched_file_sink_impl::write_tag_states_to_hdr(int noutput_items) {
     // Vector to hold all tags in the current range of the work function
     std::vector<tag_t> frequency_tags;
     get_tags_in_range(frequency_tags, 0, abs_start_index, abs_end_index, _frequency_key);
+
     // Iterate through each tag and compute the number of samples for each tag interval
     for (const tag_t &frequency_tag : frequency_tags) {
         // Compute the number of samples then update the active tag
         int32_t num_samples_active_frequency = frequency_tag.offset - _active_frequency_tag.offset;
         // Compute the active frequency 
         float active_frequency = pmt::to_float(_active_frequency_tag.value);
-        std::cout << "Active frequency: " << active_frequency << std::endl;
-        std::cout << "Num samples: " << num_samples_active_frequency <<std::endl;
+        // // print check
+        // std::cout << "Active frequency: " << active_frequency << std::endl;
+        // std::cout << "Num samples: " << num_samples_active_frequency <<std::endl;
         // and write to file
         write_to_file(_hdr_file, &active_frequency, sizeof(float));
         write_to_file(_hdr_file, &num_samples_active_frequency, sizeof(int32_t));
@@ -157,19 +159,30 @@ void batched_file_sink_impl::write_tag_states_to_hdr(int noutput_items) {
         _active_frequency_tag = frequency_tag;
     }
 
-    // if _open_new_file is set to true, we need to do some clean-up before opening the next file at the next call of the work function
+    // if _open_new_file is set to true, then we will be opening a new file at the next call of the work function.
+    // so we need to do some clean-up in this case
     if (_open_new_file) 
     {
+        /*
+        Essentially, at this moment we have handled all the tags in the current call of the work function. Thus, there is 
+        no "next tag" to evaluate the total number of samples associated with the current active tag. For a clean handover 
+        to the next file, we compute the number of samples REMAINING at the active tag in the current call of the work 
+        function.
+        
+        In this way, we will have declared for every IQ sample dumped to the bin file, what frequency it was collected at.
+        */
         // compute the number of remaining samples and write to the header file ...
         int32_t num_samples_remaining = (nitems_read(0) + noutput_items) - _active_frequency_tag.offset;
         // Compute the active frequency 
         float active_frequency = pmt::to_float(_active_frequency_tag.value);
-        std::cout << "Dangling frequency: " << active_frequency << std::endl;
-        std::cout << "Samples remaining: " << num_samples_remaining <<std::endl;
+        // // print check
+        // std::cout << "Dangling frequency: " << active_frequency << std::endl;
+        // std::cout << "Samples remaining: " << num_samples_remaining <<std::endl;
         // write this to file
         write_to_file(_hdr_file, &active_frequency, sizeof(float));
         write_to_file(_hdr_file, &num_samples_remaining, sizeof(int32_t));
-        // don't update the active frequency, as we will use this during inspect_first_sample at the next call of the work function
+
+        // don't update the active frequency, as we will initialise this at the next call of the work function
     }
 }
 
