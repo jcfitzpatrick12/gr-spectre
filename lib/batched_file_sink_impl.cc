@@ -172,8 +172,8 @@ int batched_file_sink_impl::work(
     gr_vector_const_void_star& input_items,
     gr_vector_void_star& output_items
 ) {  
-    std::cout << nitems_read(0) << std::endl;
-    std::cout << nitems_written(0) << std::endl;
+    // std::cout << nitems_read(0) << std::endl;
+    // std::cout << nitems_written(0) << std::endl;
 
     if (_open_new_file) {
         _open_new_file = false; // ensure we won't open another file until _open_new_file is set back to true
