@@ -35,16 +35,16 @@ tagged_staircase_impl::tagged_staircase_impl(int min_samples_per_step,
                      gr::io_signature::make(0, 0, 0),
                      gr::io_signature::make(
                          1 /* min outputs */, 1 /*max outputs */, sizeof(output_type))),
-      _min_samples_per_step(min_samples_per_step),
-      _max_samples_per_step(max_samples_per_step),
-      _step_increment(step_increment),
-      _samp_rate(samp_rate),
-      _sample_index_within_step(0),
-      _step_index(0),
-      _current_samples_per_step(_min_samples_per_step),
-      _samp_rate_as_float(static_cast<float>(samp_rate)),
-      _min_modelled_frequency(_samp_rate_as_float / 2.0f),
-      _current_modelled_frequency(_samp_rate_as_float / 2.0f)
+      _min_samples_per_step(min_samples_per_step), // set with user input
+      _max_samples_per_step(max_samples_per_step), // set with user input
+      _step_increment(step_increment), // set with user input
+      _samp_rate(samp_rate), // set with user input
+      _sample_index_within_step(0), // by convention, the sample index is 0-indexed
+      _step_index(0), // by convention, the step index is 0-indexed
+      _current_samples_per_step(_min_samples_per_step), // by convention, the initial samples per step is set to the minimum samples per step
+      _samp_rate_as_float(static_cast<float>(samp_rate)), 
+      _min_modelled_frequency(_samp_rate_as_float / 2.0f), // by convention, the minimum modelled frequency is the sample_rate / 2
+      _current_modelled_frequency(_min_modelled_frequency) // and we set the current modelled frequency to the minimum.
 {
 }
 
