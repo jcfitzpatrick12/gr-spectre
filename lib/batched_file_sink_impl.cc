@@ -147,14 +147,19 @@ void batched_file_sink_impl::write_tag_states_to_hdr(int noutput_items) {
     for (const tag_t &frequency_tag : frequency_tags) {
         // Compute the number of samples then update the active tag
         int32_t num_samples_active_frequency = frequency_tag.offset - _active_frequency_tag.offset;
+        // cast as a float (for ease of reading in post-processing)
+        float num_samples_active_frequency_as_float = static_cast<float>(num_samples_active_frequency);
+
         // Compute the active frequency 
         float active_frequency = pmt::to_float(_active_frequency_tag.value);
+
         // // print check
-        std::cout << "Active frequency: " << active_frequency << std::endl;
-        std::cout << "Num samples: " << num_samples_active_frequency <<std::endl;
+        // std::cout << "Active frequency: " << active_frequency << std::endl;
+        // std::cout << "Num samples: " << num_samples_active_frequency <<std::endl;
+
         // and write to file
         write_to_file(_hdr_file, &active_frequency, sizeof(float));
-        write_to_file(_hdr_file, &num_samples_active_frequency, sizeof(int32_t));
+        write_to_file(_hdr_file, &num_samples_active_frequency_as_float, sizeof(float));
         // Update the active frequency
         _active_frequency_tag = frequency_tag;
     }
@@ -173,14 +178,19 @@ void batched_file_sink_impl::write_tag_states_to_hdr(int noutput_items) {
         */
         // compute the number of remaining samples and write to the header file ...
         int32_t num_samples_remaining = (nitems_read(0) + noutput_items) - _active_frequency_tag.offset;
+        // cast as a float (for ease of reading in post-processing)
+        float num_samples_remaining_as_float = static_cast<float>(num_samples_remaining);
+        //
         // Compute the active frequency 
         float active_frequency = pmt::to_float(_active_frequency_tag.value);
+
         // // print check
-        std::cout << "Dangling frequency: " << active_frequency << std::endl;
-        std::cout << "Samples remaining: " << num_samples_remaining <<std::endl;
+        // std::cout << "Dangling frequency: " << active_frequency << std::endl;
+        // std::cout << "Samples remaining: " << num_samples_remaining <<std::endl;
+
         // write this to file
         write_to_file(_hdr_file, &active_frequency, sizeof(float));
-        write_to_file(_hdr_file, &num_samples_remaining, sizeof(int32_t));
+        write_to_file(_hdr_file, &num_samples_remaining_as_float, sizeof(float));
 
         // don't update the active frequency, as we will initialise this at the next call of the work function
     }
