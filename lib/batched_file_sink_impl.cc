@@ -206,8 +206,9 @@ int batched_file_sink_impl::work(
         _bch.update(); // effectively set the header and binary file paths, and compute the ms correction
         open_file(file_type::BIN); // open the binary file ready for the raw IQ samples
         open_file(file_type::HDR); // open the detached header ready for metadata writing
-        int32_t millisecond_correction = _bch.get_millisecond_correction(); // extract the millisecond correction and write to the detached header
-        write_to_file(_hdr_file, &millisecond_correction, sizeof(int32_t));
+        int32_t millisecond_correction = _bch.get_millisecond_correction(); // extract the millisecond correction 
+        float millisecond_correction_as_float = static_cast<float>(millisecond_correction); // convert to float (for consistency when reading, we will check its integerness when reading)
+        write_to_file(_hdr_file, &millisecond_correction_as_float, sizeof(float)); // and write to the hdr file
         _elapsed_time = 0; // Reset elapsed time when a new file is opened
         
         if (_sweeping) {
