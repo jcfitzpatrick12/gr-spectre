@@ -57,7 +57,7 @@ public:
     void open_file(file_type ftype); // open member function for either either the binary or header file
     void set_initial_active_frequency_tag(); // ensure the first sample is tagged when opening a new file
 
-    // Template function for writing to the detached header
+    // Template function for writing to a file
     template<typename T>
     void write_to_file(std::ofstream& file, const T* ptr_to_value, size_t size_of_value) {
         const char* bytes = reinterpret_cast<const char*>(ptr_to_value);
