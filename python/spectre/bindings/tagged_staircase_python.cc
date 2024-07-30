@@ -13,8 +13,8 @@
 /* If manual edits are made, the following tags should be modified accordingly.    */
 /* BINDTOOL_GEN_AUTOMATIC(0)                                                       */
 /* BINDTOOL_USE_PYGCCXML(0)                                                        */
-/* BINDTOOL_HEADER_FILE(batched_file_sink.h)                                        */
-/* BINDTOOL_HEADER_FILE_HASH(63bb35982db0e558600f2d1b9ada7333)                     */
+/* BINDTOOL_HEADER_FILE(tagged_staircase.h)                                        */
+/* BINDTOOL_HEADER_FILE_HASH(77ee16d045731c6f0264e29b720f382d)                     */
 /***********************************************************************************/
 
 #include <pybind11/complex.h>
@@ -23,26 +23,21 @@
 
 namespace py = pybind11;
 
-#include <gnuradio/spectre/batched_file_sink.h>
+#include <gnuradio/spectre/tagged_staircase.h>
 // pydoc.h is automatically generated in the build directory
-#include <batched_file_sink_pydoc.h>
+#include <tagged_staircase_pydoc.h>
 
-void bind_batched_file_sink(py::module& m)
+void bind_tagged_staircase(py::module& m)
 {
 
-    using batched_file_sink    = ::gr::spectre::batched_file_sink;
+    using tagged_staircase    = gr::spectre::tagged_staircase;
 
 
-    py::class_<batched_file_sink, gr::sync_block, gr::block, gr::basic_block,
-        std::shared_ptr<batched_file_sink>>(m, "batched_file_sink", D(batched_file_sink))
+    py::class_<tagged_staircase, gr::sync_block, gr::block, gr::basic_block,
+        std::shared_ptr<tagged_staircase>>(m, "tagged_staircase", D(tagged_staircase))
 
-        .def(py::init(&batched_file_sink::make),
-           py::arg("parent_dir") = "",
-           py::arg("tag") = "",
-           py::arg("chunk_size") = 60,
-           py::arg("samp_rate") = 32000,
-           py::arg("sweeping") = false,
-           D(batched_file_sink,make)
+        .def(py::init(&tagged_staircase::make),
+           D(tagged_staircase,make)
         )
         
 

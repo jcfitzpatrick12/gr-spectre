@@ -35,7 +35,8 @@ public:
     static sptr make(std::string parent_dir = "",
                      std::string tag = "",
                      int chunk_size = 60,
-                     int samp_rate = 32000);
+                     int samp_rate = 32000,
+                     bool sweeping = false);
 };
 
 } // namespace spectre

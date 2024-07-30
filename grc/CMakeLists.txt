@@ -6,5 +6,7 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
 #
 install(FILES
-    spectre_batched_file_sink.block.yml DESTINATION share/gnuradio/grc/blocks
+    spectre_batched_file_sink.block.yml
+    spectre_sweep_driver.block.yml
+    spectre_tagged_staircase.block.yml DESTINATION share/gnuradio/grc/blocks
 )

@@ -13,8 +13,8 @@
 /* If manual edits are made, the following tags should be modified accordingly.    */
 /* BINDTOOL_GEN_AUTOMATIC(0)                                                       */
 /* BINDTOOL_USE_PYGCCXML(0)                                                        */
-/* BINDTOOL_HEADER_FILE(batched_file_sink.h)                                        */
-/* BINDTOOL_HEADER_FILE_HASH(63bb35982db0e558600f2d1b9ada7333)                     */
+/* BINDTOOL_HEADER_FILE(sweep_driver.h)                                        */
+/* BINDTOOL_HEADER_FILE_HASH(4b40c8835dbf6dd21ae583bbd883a392)                     */
 /***********************************************************************************/
 
 #include <pybind11/complex.h>
@@ -23,26 +23,21 @@
 
 namespace py = pybind11;
 
-#include <gnuradio/spectre/batched_file_sink.h>
+#include <gnuradio/spectre/sweep_driver.h>
 // pydoc.h is automatically generated in the build directory
-#include <batched_file_sink_pydoc.h>
+#include <sweep_driver_pydoc.h>
 
-void bind_batched_file_sink(py::module& m)
+void bind_sweep_driver(py::module& m)
 {
 
-    using batched_file_sink    = ::gr::spectre::batched_file_sink;
+    using sweep_driver    = gr::spectre::sweep_driver;
 
 
-    py::class_<batched_file_sink, gr::sync_block, gr::block, gr::basic_block,
-        std::shared_ptr<batched_file_sink>>(m, "batched_file_sink", D(batched_file_sink))
+    py::class_<sweep_driver, gr::sync_block, gr::block, gr::basic_block,
+        std::shared_ptr<sweep_driver>>(m, "sweep_driver", D(sweep_driver))
 
-        .def(py::init(&batched_file_sink::make),
-           py::arg("parent_dir") = "",
-           py::arg("tag") = "",
-           py::arg("chunk_size") = 60,
-           py::arg("samp_rate") = 32000,
-           py::arg("sweeping") = false,
-           D(batched_file_sink,make)
+        .def(py::init(&sweep_driver::make),
+           D(sweep_driver,make)
         )
         
 

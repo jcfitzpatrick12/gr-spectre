@@ -14,106 +14,224 @@ using input_type = gr_complex;
 batched_file_sink::sptr batched_file_sink::make(std::string parent_dir,
                                                 std::string tag,
                                                 int chunk_size,
-                                                int samp_rate) {
+                                                int samp_rate,
+                                                bool sweeping) {
     return gnuradio::make_block_sptr<batched_file_sink_impl>(
-        parent_dir, tag, chunk_size, samp_rate);
+        parent_dir, tag, chunk_size, samp_rate, sweeping);
 }
 
 batched_file_sink_impl::batched_file_sink_impl(std::string parent_dir,
                                                std::string tag,
                                                int chunk_size,
-                                               int samp_rate)
+                                               int samp_rate,
+                                               bool sweeping)
     : gr::sync_block("batched_file_sink",
                      gr::io_signature::make(1, 1, sizeof(input_type)),
                      gr::io_signature::make(0, 0, 0)),
-      _parent_dir(parent_dir),
-      _tag(tag),
-      _chunk_size(chunk_size),
-      _samp_rate(samp_rate),
-      _open_new_file(true),
-      _elapsed_time(0),
-      _bch(parent_dir, tag) 
+      _parent_dir(std::move(parent_dir)), /**< user input */
+      _tag(std::move(tag)), /**< user input */
+      _chunk_size(chunk_size),/**< user input */
+      _samp_rate(samp_rate), /**< user input */
+      _sweeping(sweeping), /**< user input */
+      _open_new_file(true), // impose that we will open a new file at the first call of the work function
+      _elapsed_time(0), // elapsed time is zero initially, by definition.
+      _bch(_parent_dir, _tag), // create an instance of the bin chunk handler class
+      _frequency_key(pmt::string_to_symbol("rx_freq")), // declaring the frequency tag key
+      _is_active_frequency_tag_set(false) // the active frequency tag is not set until the first sample in the stream
 {
-    
-};
+}
 
-batched_file_sink_impl::~batched_file_sink_impl(
-)
-{
-if (_file.is_open()) {
-    _file.close();
-};
-};
-
-void batched_file_sink_impl::open_file() 
-{   
-    if (_file.is_open()) {
-            _file.close();
-        };
-
-    /* (essentially) update then fetch the _absolute_path and _millisecond 
-    correction member variables of the instance _bch of the batched_file_handler class */
-    _bch.set_attrs();
-    fs::path bin_chunk_path = _bch.get_absolute_path();
-    fs::path parent_path = _bch.get_absolute_parent_path();
-
-    // if the parent path does not already exist, create it
-    if (!fs::exists(parent_path)) {
-        fs::create_directories(parent_path);
-    };
-    
-    // open the batched file in binary mode, ready for writing.
-    _file.open(bin_chunk_path, std::ios::binary | std::ios::out);
-
-    // extract the millisecond correction
-    int32_t millisecond_correction = _bch.get_millisecond_correction();
-    // Convert the integer to a char pointer to access its raw byte representation
-    const char* millisecond_correction_bytes = reinterpret_cast<char*>(&millisecond_correction);
-    // write the millisecond correction to the start of the binary file
-    if (_file.is_open()) {
-        _file.write(millisecond_correction_bytes, sizeof(int));
+batched_file_sink_impl::~batched_file_sink_impl() {
+    if (_bin_file.is_open()) {
+        _bin_file.close();
     }
-    else {
-        throw std::runtime_error("Failed to open file.");
-    };
 
-    /* once a file has been opened, we will not open a new file until chunk_time [s] have elapsed */
-    _elapsed_time = 0; 
-    _open_new_file = false;
-};
+    if (_hdr_file.is_open()) {
+        _hdr_file.close();
+    }
+}
+
+
+void batched_file_sink_impl::open_file(file_type ftype) {
+    std::ofstream* file = nullptr;
+    fs::path file_path;
+
+    // Determine file type and set file path
+    switch (ftype) {
+        case file_type::BIN:
+            file = &_bin_file;
+            file_path = _bch.get_bin_absolute_path();
+            break;
+        case file_type::HDR:
+            file = &_hdr_file;
+            file_path = _bch.get_hdr_absolute_path();
+            break;
+        default:
+            throw std::invalid_argument("Invalid file type specified.");
+    }
+
+    // Close the file if already open
+    if (file->is_open()) {
+        file->close();
+    }
+
+    // Create necessary directories if they don't exist
+    fs::path parent_path_with_date_dirs = _bch.get_parent_path_with_date_dirs();
+    if (!fs::exists(parent_path_with_date_dirs)) {
+        try {
+            fs::create_directories(parent_path_with_date_dirs);
+        } catch (const fs::filesystem_error& e) {
+            throw std::runtime_error("Failed to create directories: " + parent_path_with_date_dirs.string() + ", error: " + e.what());
+        }
+    }
+
+    // Open the file for writing
+    file->open(file_path, std::ios::binary | std::ios::out);
+    if (!file->is_open()) {
+        throw std::runtime_error("Failed to open file: " + file_path.string());
+    }
+}
+void batched_file_sink_impl::set_initial_active_frequency_tag() 
+{    
+    int first_sample_abs_index = nitems_read(0);
+    // now populate a vector, v, which will contain one element if the first sample is tagged, and is empty otherwise
+    std::vector<tag_t> vector_wrapped_first_sample_tag;
+    get_tags_in_range(vector_wrapped_first_sample_tag, 0, first_sample_abs_index, first_sample_abs_index + 1, _frequency_key);
+    // inspect whether the first sample has a tag or not
+    bool first_sample_has_tag = !vector_wrapped_first_sample_tag.empty();
+
+    // if the active frequency has already been set, update the offset to coincide with the first sample as of this call to the work function
+    if (_is_active_frequency_tag_set) 
+    {
+        _active_frequency_tag.offset = nitems_read(0);
+    }
+    // otherwise the active frequency has not yet been set
+    else 
+    {   
+        // if the first sample has a tag, use this to update the active frequency tag 
+        if (first_sample_has_tag)
+        {
+            _active_frequency_tag = vector_wrapped_first_sample_tag[0];
+        }
+
+        // Otherwise, we have an undefined tag state.
+        /*
+        Why is this undefined? We need to know the frequency corresponding to each IQ sample in the stream. 
+        Consider two neighbouring frequency tags, tag_i and tag_j, with absolute indices i and j, where i < j. 
+        All samples z_k, with k in [i, j), correspond to the frequency tag_i.value. 
+
+        Therefore, for any IQ sample z_k in the stream, there exists a tag tag_i where i <= k, which we call the 
+        active tag for z_k. From this, the first sample (z_0) must have a corresponding tag at absolute index 0. 
+        If _is_active_frequency_tag_set is false (i.e. during the first call of the work function) and the first sample 
+        is not tagged, we cannot determine its corresponding frequency, leading to an undefined state.
+        */
+        else
+        {
+            throw std::runtime_error("Undefined tag state, the first sample in the stream must be frequency tagged!");
+        }
+    }
+    // update member variable to note that the active tag is now set
+    _is_active_frequency_tag_set = true;
+}
+
+void batched_file_sink_impl::write_tag_states_to_hdr(int noutput_items) {  
+    // search for tags subsequent to the current active tag
+    int abs_start_index  = _active_frequency_tag.offset + 1;
+    // up until the current range of the work function
+    int abs_end_index = nitems_read(0) + noutput_items;
+    // Vector to hold all tags in the current range of the work function
+    std::vector<tag_t> frequency_tags;
+    get_tags_in_range(frequency_tags, 0, abs_start_index, abs_end_index, _frequency_key);
+
+    // Iterate through each tag and compute the number of samples for each tag interval
+    for (const tag_t &frequency_tag : frequency_tags) {
+        // Compute the number of samples then update the active tag
+        int32_t num_samples_active_frequency = frequency_tag.offset - _active_frequency_tag.offset;
+        // cast as a float (for ease of reading in post-processing)
+        float num_samples_active_frequency_as_float = static_cast<float>(num_samples_active_frequency);
+
+        // Compute the active frequency 
+        float active_frequency = pmt::to_float(_active_frequency_tag.value);
+
+        // // print check
+        // std::cout << "Active frequency: " << active_frequency << std::endl;
+        // std::cout << "Num samples: " << num_samples_active_frequency <<std::endl;
+
+        // and write to file
+        write_to_file(_hdr_file, &active_frequency, sizeof(float));
+        write_to_file(_hdr_file, &num_samples_active_frequency_as_float, sizeof(float));
+        // Update the active frequency
+        _active_frequency_tag = frequency_tag;
+    }
+
+    // if _open_new_file is set to true, then we will be opening a new file at the next call of the work function.
+    // so we need to do some clean-up in this case
+    if (_open_new_file) 
+    {
+        /*
+        Essentially, at this moment we have handled all the tags in the current call of the work function. Thus, there is 
+        no "next tag" to evaluate the total number of samples associated with the current active tag. For a clean handover 
+        to the next file, we compute the number of samples REMAINING at the active tag in the current call of the work 
+        function.
+        
+        In this way, we will have declared for every IQ sample dumped to the bin file, what frequency it was collected at.
+        */
+        // compute the number of remaining samples and write to the header file ...
+        int32_t num_samples_remaining = (nitems_read(0) + noutput_items) - _active_frequency_tag.offset;
+        // cast as a float (for ease of reading in post-processing)
+        float num_samples_remaining_as_float = static_cast<float>(num_samples_remaining);
+        //
+        // Compute the active frequency 
+        float active_frequency = pmt::to_float(_active_frequency_tag.value);
+
+        // // print check
+        // std::cout << "Dangling frequency: " << active_frequency << std::endl;
+        // std::cout << "Samples remaining: " << num_samples_remaining <<std::endl;
+
+        // write this to file
+        write_to_file(_hdr_file, &active_frequency, sizeof(float));
+        write_to_file(_hdr_file, &num_samples_remaining_as_float, sizeof(float));
+
+        // don't update the active frequency, as we will initialise this at the next call of the work function
+    }
+}
 
 int batched_file_sink_impl::work(
     int noutput_items,
     gr_vector_const_void_star& input_items,
     gr_vector_void_star& output_items
-){  
-    
-    /* For the batched file sink block, input_items is a vector 
-    of constant void pointers of length one,
-    where the only element points to the first element of the 
-    buffer of complex samples. In the conversion below, we instead 
-    cast the void pointer as a character stream in order to 
-    access the raw bytes which we will in the proceeding save to file */
-    const char* in0 = static_cast<const char*>(input_items[0]);
-
+) {
     if (_open_new_file) {
-        open_file();
+        _open_new_file = false; // ensure we won't open another file until _open_new_file is set back to true
+        _bch.update(); // effectively set the header and binary file paths, and compute the ms correction
+        open_file(file_type::BIN); // open the binary file ready for the raw IQ samples
+        open_file(file_type::HDR); // open the detached header ready for metadata writing
+        int32_t millisecond_correction = _bch.get_millisecond_correction(); // extract the millisecond correction 
+        float millisecond_correction_as_float = static_cast<float>(millisecond_correction); // convert to float (for consistency when reading, we will check its integerness when reading)
+        write_to_file(_hdr_file, &millisecond_correction_as_float, sizeof(float)); // and write to the hdr file
+        _elapsed_time = 0; // Reset elapsed time when a new file is opened
+        
+        if (_sweeping) {
+            set_initial_active_frequency_tag();
+        }
     }
 
-    if (_file.is_open()) {
-        // write the entire buffer to the current active binary chunk file
-        _file.write(in0, noutput_items * sizeof(gr_complex));
-        // infer the elapsed_time from the (input) sample rate, and number of items in the buffer
-        _elapsed_time += noutput_items * (1.0 / _samp_rate);
-        // if elapsed time is greater than the (input) chunk_size, at the next iteration, we will open a new file
-        if (_elapsed_time >= _chunk_size) {
-            _open_new_file = true;
-        }
-    } else {
-        throw std::runtime_error("Failed to write to file.");
+    /* dump the contents input buffer to the bin file */
+    write_to_file(_bin_file, input_items[0], sizeof(gr_complex) * noutput_items);
+
+    /* inferring elapsed time based on the number of samples processed */
+    _elapsed_time += noutput_items * (1.0 / _samp_rate);
+    // If elapsed time is greater than the (input) chunk_size, at the next iteration, we will open a new file
+    if (_elapsed_time >= _chunk_size) {
+        _open_new_file = true;
+    }
+
+    /* if the sweeping flag is true, write the frequency tag information to the detached header. */
+    if (_sweeping) {
+        write_tag_states_to_hdr(noutput_items);
     }
     return noutput_items;
-};
+}
 
 } /* namespace spectre */
 } /* namespace gr */
