@@ -1,7 +1,7 @@
 # gr-spectre: GNU Radio OOT module containing custom file sinks
 
 ## Overview
-This OOT module contains custom file sinks used in the [`spectre`](https://github.com/jcfitzpatrick12/spectre) repository. 
+This OOT module contains custom GNU Radio blocks used in the [`spectre`](https://github.com/jcfitzpatrick12/spectre) repository. 
 
 📢 **This project is under active development. Detailed documentation will be provided in the future.**  📢 
 
