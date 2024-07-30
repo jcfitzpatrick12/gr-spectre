@@ -7,13 +7,11 @@ This OOT module contains custom file sinks used in the [`spectre`](https://githu
 
 ## Blocks
 
-### Batched File Sink 
-Streams complex data continously into batched binary files of a user-determined size, into a directory derived from system time. 
-  
-e.g. [...]/[year]/[month]/[day]/[t0]_[tag].bin  where:
-- [...] is a user defined parent directory.
-- [t0] is the start time of the first sample of that batched chunk of data.
-- [tag] is any string tag defined by the user.
+- ```Batched File Sink```: streams complex streams complex data continuously into batched binary files of a user-determined size, saving appropriate metadata in a detached header.
+- ```Sweep Driver```: periodically publishes messages instructing frequency re-tuning for compatible receiver blocks.
+- ```Tagged Staircase```: source block used to test ```Batched File Sink``` and ```spectre``` frequency sweep modules.
+
+
 
 
 
