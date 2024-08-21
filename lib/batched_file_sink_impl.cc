@@ -152,7 +152,7 @@ void batched_file_sink_impl::set_initial_active_frequency_tag()
     _is_active_frequency_tag_set = true;
 }
 
-void batched_file_sink_impl::write_tag_states_to_hdr(int noutput_items) {  
+void batched_file_sink_impl::write_tag_states_to_hdr(int noutput_items) {
     // search for tags subsequent to the current active tag
     int abs_start_index  = _active_frequency_tag.offset + 1;
     // up until the current range of the work function
@@ -168,12 +168,15 @@ void batched_file_sink_impl::write_tag_states_to_hdr(int noutput_items) {
         // cast as a float (for ease of reading in post-processing)
         float num_samples_active_frequency_as_float = static_cast<float>(num_samples_active_frequency);
 
-        // Compute the active frequency 
-        float active_frequency = pmt::to_float(_active_frequency_tag.value);
-
-        // // print check
-        // std::cout << "Active frequency: " << active_frequency << std::endl;
-        // std::cout << "Num samples: " << num_samples_active_frequency <<std::endl;
+        // Check the type of the frequency tag value and convert accordingly
+        float active_frequency;
+        if (pmt::is_real(_active_frequency_tag.value)) {
+            // If the value is a double, convert it to float
+            active_frequency = static_cast<float>(pmt::to_double(_active_frequency_tag.value));
+        } else {
+            // Assume it's a float if it's not a double
+            active_frequency = pmt::to_float(_active_frequency_tag.value);
+        }
 
         // and write to file
         write_to_file(_hdr_file, &active_frequency, sizeof(float));
@@ -198,13 +201,16 @@ void batched_file_sink_impl::write_tag_states_to_hdr(int noutput_items) {
         int32_t num_samples_remaining = (nitems_read(0) + noutput_items) - _active_frequency_tag.offset;
         // cast as a float (for ease of reading in post-processing)
         float num_samples_remaining_as_float = static_cast<float>(num_samples_remaining);
-        //
-        // Compute the active frequency 
-        float active_frequency = pmt::to_float(_active_frequency_tag.value);
 
-        // // print check
-        // std::cout << "Dangling frequency: " << active_frequency << std::endl;
-        // std::cout << "Samples remaining: " << num_samples_remaining <<std::endl;
+        // Check the type of the frequency tag value and convert accordingly
+        float active_frequency;
+        if (pmt::is_real(_active_frequency_tag.value)) {
+            // If the value is a double, convert it to float
+            active_frequency = static_cast<float>(pmt::to_double(_active_frequency_tag.value));
+        } else {
+            // Assume it's a float if it's not a double
+            active_frequency = pmt::to_float(_active_frequency_tag.value);
+        }
 
         // write this to file
         write_to_file(_hdr_file, &active_frequency, sizeof(float));
@@ -213,6 +219,7 @@ void batched_file_sink_impl::write_tag_states_to_hdr(int noutput_items) {
         // don't update the active frequency, as we will initialise this at the next call of the work function
     }
 }
+
 
 int batched_file_sink_impl::work(
     int noutput_items,
@@ -246,7 +253,7 @@ int batched_file_sink_impl::work(
 
     /* if the sweeping flag is true, write the frequency tag information to the detached header. */
     if (_sweeping) {
-        // write_tag_states_to_hdr(noutput_items);
+        write_tag_states_to_hdr(noutput_items);
     }
     return noutput_items;
 }
