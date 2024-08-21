@@ -17,7 +17,7 @@ batched_file_sink::sptr batched_file_sink::make(std::string parent_dir,
                                                 int samp_rate,
                                                 bool sweeping,
                                                 std::string frequency_tag_key,
-                                                double initial_active_frequency) {
+                                                float initial_active_frequency) {
     return gnuradio::make_block_sptr<batched_file_sink_impl>(
         parent_dir, tag, chunk_size, samp_rate, sweeping, frequency_tag_key, initial_active_frequency);
 }
@@ -28,7 +28,7 @@ batched_file_sink_impl::batched_file_sink_impl(std::string parent_dir,
                                                int samp_rate,
                                                bool sweeping,
                                                std::string frequency_tag_key,
-                                               double initial_active_frequency)
+                                               float initial_active_frequency)
     : gr::sync_block("batched_file_sink",
                      gr::io_signature::make(1, 1, sizeof(input_type)),
                      gr::io_signature::make(0, 0, 0)),
@@ -42,7 +42,7 @@ batched_file_sink_impl::batched_file_sink_impl(std::string parent_dir,
       _bch(_parent_dir, _tag), // create an instance of the bin chunk handler class
       _frequency_tag_key(pmt::string_to_symbol(frequency_tag_key)), // declaring the frequency tag key
       _is_active_frequency_tag_set(false), // the active frequency tag is not set until the first sample in the stream
-      _initial_active_frequency(initial_active_frequency) // if a tag is not available on the very first sample, this float is used by default
+      _initial_active_frequency(static_cast<double>(initial_active_frequency)) // if a tag is not available on the very first sample, this float is used by default
 {
 }
 

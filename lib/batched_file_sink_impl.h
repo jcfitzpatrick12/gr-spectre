@@ -53,7 +53,7 @@ public:
         int samp_rate,
         bool sweeping,
         std::string frequency_tag_key,
-        double initial_active_frequency
+        float initial_active_frequency
     ); // Constructor. 
 
     ~batched_file_sink_impl();// Destructor.
