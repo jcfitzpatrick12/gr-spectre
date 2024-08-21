@@ -168,6 +168,9 @@ void batched_file_sink_impl::write_tag_states_to_hdr(int noutput_items) {
         // cast as a float (for ease of reading in post-processing)
         float num_samples_active_frequency_as_float = static_cast<float>(num_samples_active_frequency);
 
+        // temporary print test
+        std::cout << _active_frequency_tag.value << std::endl;
+        
         // Check the type of the frequency tag value and convert accordingly
         float active_frequency;
         if (pmt::is_real(_active_frequency_tag.value)) {
