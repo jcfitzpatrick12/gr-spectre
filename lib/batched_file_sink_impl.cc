@@ -121,6 +121,7 @@ void batched_file_sink_impl::set_initial_active_frequency_tag()
             _active_frequency_tag.offset = initial_offset;
             _active_frequency_tag.key = _frequency_tag_key;
             _active_frequency_tag.value = pmt::from_float(_initial_active_frequency);
+            _active_frequency_tag.srcid = pmt::intern(alias());  // Set the srcid using the block's alias
         }
 
         // if the first sample has a tag, override the active frequency with that attached to the 
