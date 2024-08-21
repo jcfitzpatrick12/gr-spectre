@@ -246,7 +246,7 @@ int batched_file_sink_impl::work(
 
     /* if the sweeping flag is true, write the frequency tag information to the detached header. */
     if (_sweeping) {
-        write_tag_states_to_hdr(noutput_items);
+        // write_tag_states_to_hdr(noutput_items);
     }
     return noutput_items;
 }
