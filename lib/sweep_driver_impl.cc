@@ -18,7 +18,7 @@ sweep_driver::sptr sweep_driver::make(
     float min_freq, float max_freq, float freq_step, int samp_rate, int samples_per_step, std::string receiver_port_name)
 {
     return gnuradio::make_block_sptr<sweep_driver_impl>(
-        min_freq, max_freq, freq_step, samp_rate, samples_per_step);
+        min_freq, max_freq, freq_step, samp_rate, samples_per_step, receiver_port_name);
 }
 
 sweep_driver_impl::sweep_driver_impl(
