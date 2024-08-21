@@ -169,6 +169,8 @@ void batched_file_sink_impl::write_tag_states_to_hdr(int noutput_items) {
         // Cast as a float (for ease of reading in post-processing)
         float num_samples_active_frequency_as_float = static_cast<float>(num_samples_active_frequency);
 
+        std::cout << pmt::write_string(frequency_tag.value) << std::endl;
+
         // Ensure the PMT value is numeric before attempting conversion
         if (pmt::is_number(_active_frequency_tag.value)) {
             float active_frequency = static_cast<float>(pmt::to_double(_active_frequency_tag.value));
