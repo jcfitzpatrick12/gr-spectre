@@ -31,7 +31,7 @@ parameters:
     default: freq
   - id: initial_active_frequency
     label: Initial Active Frequency
-    dtype: double
+    dtype: float
     default: 0
 
 inputs:
