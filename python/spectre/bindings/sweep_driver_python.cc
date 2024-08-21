@@ -14,7 +14,7 @@
 /* BINDTOOL_GEN_AUTOMATIC(0)                                                       */
 /* BINDTOOL_USE_PYGCCXML(0)                                                        */
 /* BINDTOOL_HEADER_FILE(sweep_driver.h)                                        */
-/* BINDTOOL_HEADER_FILE_HASH(4b40c8835dbf6dd21ae583bbd883a392)                     */
+/* BINDTOOL_HEADER_FILE_HASH(264e6484c9edbbcb237350342193174b)                     */
 /***********************************************************************************/
 
 #include <pybind11/complex.h>
@@ -30,13 +30,19 @@ namespace py = pybind11;
 void bind_sweep_driver(py::module& m)
 {
 
-    using sweep_driver    = gr::spectre::sweep_driver;
+    using sweep_driver    = ::gr::spectre::sweep_driver;
 
 
     py::class_<sweep_driver, gr::sync_block, gr::block, gr::basic_block,
         std::shared_ptr<sweep_driver>>(m, "sweep_driver", D(sweep_driver))
 
         .def(py::init(&sweep_driver::make),
+           py::arg("min_freq") = 40000000,
+           py::arg("max_freq") = 80000000,
+           py::arg("freq_step") = 8000000,
+           py::arg("samp_rate") = 8000000,
+           py::arg("samples_per_step") = 300000,
+           py::arg("receiver_port_name") = "freq",
            D(sweep_driver,make)
         )
         

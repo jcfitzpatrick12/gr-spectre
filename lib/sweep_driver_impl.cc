@@ -15,14 +15,14 @@ namespace spectre {
 using input_type = gr_complex;
 
 sweep_driver::sptr sweep_driver::make(
-    float min_freq, float max_freq, float freq_step, int samp_rate, int samples_per_step)
+    float min_freq, float max_freq, float freq_step, int samp_rate, int samples_per_step, std::string receiver_port_name)
 {
     return gnuradio::make_block_sptr<sweep_driver_impl>(
         min_freq, max_freq, freq_step, samp_rate, samples_per_step);
 }
 
 sweep_driver_impl::sweep_driver_impl(
-    float min_freq, float max_freq, float freq_step, int samp_rate, int samples_per_step)
+    float min_freq, float max_freq, float freq_step, int samp_rate, int samples_per_step, std::string receiver_port_name)
     : gr::sync_block("synced_sweep_driver",
                      gr::io_signature::make(1, 1, sizeof(input_type)),
                      gr::io_signature::make(0, 0, 0)),
@@ -31,11 +31,12 @@ sweep_driver_impl::sweep_driver_impl(
     _freq_step(freq_step), // set with user input
     _samp_rate(samp_rate), // set with user input
     _samples_per_step(samples_per_step), // set with user input
+    _receiver_port_name(receiver_port_name), // set with user input
     _freq0(compute_freq0()), // compute based on user input
     _sample_index_within_step(0), // by convention, the initial sample index within the step is 0
     _current_freq(_freq0) // the current frequency is initially the computed _freq0
 {   
-    // declare message port
+    // declare an output message port for sweep driver
     message_port_register_out(pmt::mp("freq"));
 }
 
@@ -46,7 +47,7 @@ float sweep_driver_impl::compute_freq0() {
 }
 
 void sweep_driver_impl::publish_current_freq() {
-    pmt::pmt_t key = pmt::intern("freq");
+    pmt::pmt_t key = pmt::intern(_receiver_port_name);
     pmt::pmt_t value = pmt::from_float(_current_freq);
     pmt::pmt_t msg = pmt::cons(key, value);
     message_port_pub(pmt::mp("freq"), msg);

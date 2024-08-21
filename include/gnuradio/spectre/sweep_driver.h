@@ -36,7 +36,8 @@ public:
                      float max_freq = 80000000,
                      float freq_step = 8000000,
                      int samp_rate = 8000000,
-                     int samples_per_step = 300000);
+                     int samples_per_step = 300000,
+                     std::string receiver_port_name = "freq");
 };
 
 } // namespace spectre
