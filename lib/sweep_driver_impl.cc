@@ -23,7 +23,7 @@ sweep_driver::sptr sweep_driver::make(
 
 sweep_driver_impl::sweep_driver_impl(
     float min_freq, float max_freq, float freq_step, int samp_rate, int samples_per_step, std::string receiver_port_name)
-    : gr::sync_block("synced_sweep_driver",
+    : gr::sync_block("sweep_driver",
                      gr::io_signature::make(1, 1, sizeof(input_type)),
                      gr::io_signature::make(0, 0, 0)),
     _min_freq(min_freq), // set with user input
