@@ -170,7 +170,6 @@ void batched_file_sink_impl::write_tag_states_to_hdr(int noutput_items) {
 
         // Check the type of the frequency tag value and convert accordingly
         float active_frequency;
-        std::cout << _active_frequency_tag.value << std::endl;
         active_frequency = static_cast<float>(pmt::to_double(_active_frequency_tag.value));
 
 
@@ -243,7 +242,7 @@ int batched_file_sink_impl::work(
 
     /* if the sweeping flag is true, write the frequency tag information to the detached header. */
     if (_sweeping) {
-        write_tag_states_to_hdr(noutput_items);
+        // write_tag_states_to_hdr(noutput_items);
     }
     return noutput_items;
 }
