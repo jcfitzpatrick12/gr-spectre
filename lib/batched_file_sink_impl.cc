@@ -15,16 +15,18 @@ batched_file_sink::sptr batched_file_sink::make(std::string parent_dir,
                                                 std::string tag,
                                                 int chunk_size,
                                                 int samp_rate,
-                                                bool sweeping) {
+                                                bool sweeping,
+                                                std::string frequency_tag_key) {
     return gnuradio::make_block_sptr<batched_file_sink_impl>(
-        parent_dir, tag, chunk_size, samp_rate, sweeping);
+        parent_dir, tag, chunk_size, samp_rate, sweeping, frequency_tag_key);
 }
 
 batched_file_sink_impl::batched_file_sink_impl(std::string parent_dir,
                                                std::string tag,
                                                int chunk_size,
                                                int samp_rate,
-                                               bool sweeping)
+                                               bool sweeping,
+                                               std::string frequency_tag_key)
     : gr::sync_block("batched_file_sink",
                      gr::io_signature::make(1, 1, sizeof(input_type)),
                      gr::io_signature::make(0, 0, 0)),
@@ -36,7 +38,7 @@ batched_file_sink_impl::batched_file_sink_impl(std::string parent_dir,
       _open_new_file(true), // impose that we will open a new file at the first call of the work function
       _elapsed_time(0), // elapsed time is zero initially, by definition.
       _bch(_parent_dir, _tag), // create an instance of the bin chunk handler class
-      _frequency_key(pmt::string_to_symbol("rx_freq")), // declaring the frequency tag key
+      _frequency_tag_key(pmt::string_to_symbol(frequency_tag_key)), // declaring the frequency tag key
       _is_active_frequency_tag_set(false) // the active frequency tag is not set until the first sample in the stream
 {
 }
@@ -96,7 +98,7 @@ void batched_file_sink_impl::set_initial_active_frequency_tag()
     int first_sample_abs_index = nitems_read(0);
     // now populate a vector, v, which will contain one element if the first sample is tagged, and is empty otherwise
     std::vector<tag_t> vector_wrapped_first_sample_tag;
-    get_tags_in_range(vector_wrapped_first_sample_tag, 0, first_sample_abs_index, first_sample_abs_index + 1, _frequency_key);
+    get_tags_in_range(vector_wrapped_first_sample_tag, 0, first_sample_abs_index, first_sample_abs_index + 1, _frequency_tag_key);
     // inspect whether the first sample has a tag or not
     bool first_sample_has_tag = !vector_wrapped_first_sample_tag.empty();
 
@@ -141,7 +143,7 @@ void batched_file_sink_impl::write_tag_states_to_hdr(int noutput_items) {
     int abs_end_index = nitems_read(0) + noutput_items;
     // Vector to hold all tags in the current range of the work function
     std::vector<tag_t> frequency_tags;
-    get_tags_in_range(frequency_tags, 0, abs_start_index, abs_end_index, _frequency_key);
+    get_tags_in_range(frequency_tags, 0, abs_start_index, abs_end_index, _frequency_tag_key);
 
     // Iterate through each tag and compute the number of samples for each tag interval
     for (const tag_t &frequency_tag : frequency_tags) {

@@ -36,7 +36,8 @@ public:
                      std::string tag = "",
                      int chunk_size = 60,
                      int samp_rate = 32000,
-                     bool sweeping = false);
+                     bool sweeping = false,
+                     std::string frequency_key = "freq");
 };
 
 } // namespace spectre

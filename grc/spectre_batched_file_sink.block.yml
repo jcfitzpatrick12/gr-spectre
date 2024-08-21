@@ -4,7 +4,7 @@ category: '[spectre]'
 
 templates:
   imports: from gnuradio import spectre
-  make: spectre.batched_file_sink(${parent_dir}, ${tag}, ${chunk_size}, ${samp_rate}, ${sweeping})
+  make: spectre.batched_file_sink(${parent_dir}, ${tag}, ${chunk_size}, ${samp_rate}, ${sweeping}, ${frequency_tag_key})
 
 parameters:
   - id: parent_dir
@@ -25,6 +25,9 @@ parameters:
     label: Sweeping [True / False]
     dtype: bool
     default: False
+  - id: frequency_tag_key
+    dtype: string
+    default: freq
 inputs:
   - label: in0
     domain: stream
