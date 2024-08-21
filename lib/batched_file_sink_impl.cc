@@ -16,9 +16,10 @@ batched_file_sink::sptr batched_file_sink::make(std::string parent_dir,
                                                 int chunk_size,
                                                 int samp_rate,
                                                 bool sweeping,
-                                                std::string frequency_tag_key) {
+                                                std::string frequency_tag_key,
+                                                float initial_active_frequency) {
     return gnuradio::make_block_sptr<batched_file_sink_impl>(
-        parent_dir, tag, chunk_size, samp_rate, sweeping, frequency_tag_key);
+        parent_dir, tag, chunk_size, samp_rate, sweeping, frequency_tag_key, initial_active_frequency);
 }
 
 batched_file_sink_impl::batched_file_sink_impl(std::string parent_dir,
@@ -26,7 +27,8 @@ batched_file_sink_impl::batched_file_sink_impl(std::string parent_dir,
                                                int chunk_size,
                                                int samp_rate,
                                                bool sweeping,
-                                               std::string frequency_tag_key)
+                                               std::string frequency_tag_key,
+                                               float initial_active_frequency)
     : gr::sync_block("batched_file_sink",
                      gr::io_signature::make(1, 1, sizeof(input_type)),
                      gr::io_signature::make(0, 0, 0)),
@@ -39,7 +41,8 @@ batched_file_sink_impl::batched_file_sink_impl(std::string parent_dir,
       _elapsed_time(0), // elapsed time is zero initially, by definition.
       _bch(_parent_dir, _tag), // create an instance of the bin chunk handler class
       _frequency_tag_key(pmt::string_to_symbol(frequency_tag_key)), // declaring the frequency tag key
-      _is_active_frequency_tag_set(false) // the active frequency tag is not set until the first sample in the stream
+      _is_active_frequency_tag_set(false), // the active frequency tag is not set until the first sample in the stream
+      _initial_active_frequency(initial_active_frequency) // if a tag is not available on the very first sample, this float is used by default
 {
 }
 
@@ -109,9 +112,20 @@ void batched_file_sink_impl::set_initial_active_frequency_tag()
     }
     // otherwise the active frequency has not yet been set
     else 
-    {   
-        // if the first sample has a tag, use this to update the active frequency tag 
-        if (first_sample_has_tag)
+    {
+        // if the user has explicitly specified the initial active frequency (i.e. it is non-zero) 
+        // use this to define the initial active frequency tag 
+        if (_initial_active_frequency != 0) {
+            tag_t _active_frequency_tag;
+            uint64_t initial_offset = 0;
+            _active_frequency_tag.offset = initial_offset;
+            _active_frequency_tag.key = _frequency_tag_key;
+            _active_frequency_tag.value = pmt::from_float(_initial_active_frequency);
+        }
+
+        // if the first sample has a tag, override the active frequency with that attached to the 
+        // first sample
+        else if (first_sample_has_tag)
         {
             _active_frequency_tag = vector_wrapped_first_sample_tag[0];
         }
@@ -125,7 +139,8 @@ void batched_file_sink_impl::set_initial_active_frequency_tag()
         Therefore, for any IQ sample z_k in the stream, there exists a tag tag_i where i <= k, which we call the 
         active tag for z_k. From this, the first sample (z_0) must have a corresponding tag at absolute index 0. 
         If _is_active_frequency_tag_set is false (i.e. during the first call of the work function) and the first sample 
-        is not tagged, we cannot determine its corresponding frequency, leading to an undefined state.
+        is not tagged (and no additional information has been provided w.r.t. the initial state) we cannot determine 
+        its corresponding frequency, leading to an undefined state.
         */
         else
         {
