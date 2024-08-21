@@ -168,17 +168,10 @@ void batched_file_sink_impl::write_tag_states_to_hdr(int noutput_items) {
         // cast as a float (for ease of reading in post-processing)
         float num_samples_active_frequency_as_float = static_cast<float>(num_samples_active_frequency);
 
-        // temporary print test
-        std::cout << _active_frequency_tag.value << std::endl;
-        
         // Check the type of the frequency tag value and convert accordingly
         float active_frequency;
-        if (pmt::is_real(_active_frequency_tag.value)) {
-            active_frequency = static_cast<float>(pmt::to_double(_active_frequency_tag.value));
-        } else {
-            std::cerr << "Error: PMT is not a real number. Actual type: " << pmt::write_string(_active_frequency_tag.value) << std::endl;
-            throw std::runtime_error("Expected a real (float or double) PMT type for the frequency tag.");
-        }
+        active_frequency = static_cast<float>(pmt::to_double(_active_frequency_tag.value));
+
 
         // and write to file
         write_to_file(_hdr_file, &active_frequency, sizeof(float));
@@ -206,12 +199,7 @@ void batched_file_sink_impl::write_tag_states_to_hdr(int noutput_items) {
 
         // Check the type of the frequency tag value and convert accordingly
         float active_frequency;
-        if (pmt::is_real(_active_frequency_tag.value)) {
-            active_frequency = static_cast<float>(pmt::to_double(_active_frequency_tag.value));
-        } else {
-            std::cerr << "Error: PMT is not a real number. Actual type: " << pmt::write_string(_active_frequency_tag.value) << std::endl;
-            throw std::runtime_error("Expected a real (float or double) PMT type for the frequency tag.");
-        }
+        active_frequency = static_cast<float>(pmt::to_double(_active_frequency_tag.value));
 
         // write this to file
         write_to_file(_hdr_file, &active_frequency, sizeof(float));
