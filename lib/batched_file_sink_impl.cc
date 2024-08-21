@@ -17,7 +17,7 @@ batched_file_sink::sptr batched_file_sink::make(std::string parent_dir,
                                                 int samp_rate,
                                                 bool sweeping,
                                                 std::string frequency_tag_key,
-                                                float initial_active_frequency) {
+                                                double initial_active_frequency) {
     return gnuradio::make_block_sptr<batched_file_sink_impl>(
         parent_dir, tag, chunk_size, samp_rate, sweeping, frequency_tag_key, initial_active_frequency);
 }
@@ -28,7 +28,7 @@ batched_file_sink_impl::batched_file_sink_impl(std::string parent_dir,
                                                int samp_rate,
                                                bool sweeping,
                                                std::string frequency_tag_key,
-                                               float initial_active_frequency)
+                                               double initial_active_frequency)
     : gr::sync_block("batched_file_sink",
                      gr::io_signature::make(1, 1, sizeof(input_type)),
                      gr::io_signature::make(0, 0, 0)),
@@ -120,7 +120,7 @@ void batched_file_sink_impl::set_initial_active_frequency_tag()
             uint64_t initial_offset = 0;
             _active_frequency_tag.offset = initial_offset;
             _active_frequency_tag.key = _frequency_tag_key;
-            _active_frequency_tag.value = pmt::from_float(_initial_active_frequency);
+            _active_frequency_tag.value = pmt::from_double(_initial_active_frequency);
             _active_frequency_tag.srcid = pmt::intern(alias());  // Set the srcid using the block's alias
         }
 
@@ -169,7 +169,7 @@ void batched_file_sink_impl::write_tag_states_to_hdr(int noutput_items) {
         float num_samples_active_frequency_as_float = static_cast<float>(num_samples_active_frequency);
 
         // Compute the active frequency 
-        float active_frequency = pmt::to_float(_active_frequency_tag.value);
+        float active_frequency = pmt::to_double(_active_frequency_tag.value);
 
         // // print check
         // std::cout << "Active frequency: " << active_frequency << std::endl;

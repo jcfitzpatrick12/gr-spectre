@@ -43,7 +43,7 @@ private:
     // all samples with absolute index [N_start, N_end) were collected at frequency corresponding to that tag at N_start
     tag_t _active_frequency_tag; // member function to keep track of the active tag
     bool _is_active_frequency_tag_set; // boolean to determine whether the active frequency tag is set
-    float _initial_active_frequency; // float to inform of initial active frequency if tag is not available. Ignored if tag is available.
+    double _initial_active_frequency; // float to inform of initial active frequency if tag is not available. Ignored if tag is available.
 
 public:
     batched_file_sink_impl(
@@ -53,7 +53,7 @@ public:
         int samp_rate,
         bool sweeping,
         std::string frequency_tag_key,
-        float initial_active_frequency
+        double initial_active_frequency
     ); // Constructor. 
 
     ~batched_file_sink_impl();// Destructor.

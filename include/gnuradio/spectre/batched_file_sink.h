@@ -38,7 +38,7 @@ public:
                      int samp_rate = 32000,
                      bool sweeping = false,
                      std::string frequency_tag_key = "freq",
-                     float initial_active_frequency = 0);
+                     double initial_active_frequency = 0);
 };
 
 } // namespace spectre
