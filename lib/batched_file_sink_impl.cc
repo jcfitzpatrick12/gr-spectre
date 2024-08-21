@@ -116,13 +116,11 @@ void batched_file_sink_impl::set_initial_active_frequency_tag()
         // if the user has explicitly specified the initial active frequency (i.e. it is non-zero) 
         // use this to define the initial active frequency tag 
         if (_initial_active_frequency != 0) {
-            tag_t _active_frequency_tag;
             uint64_t initial_offset = 0;
             _active_frequency_tag.offset = initial_offset;
             _active_frequency_tag.key = _frequency_tag_key;
             _active_frequency_tag.value = pmt::from_float(_initial_active_frequency);
             _active_frequency_tag.srcid = pmt::intern(alias());  // Set the srcid using the block's alias
-            std::cout << "Setting active frequency tag manually!" << std::endl;
         }
 
         // if the first sample has a tag, override the active frequency with that attached to the 
