@@ -122,6 +122,7 @@ void batched_file_sink_impl::set_initial_active_frequency_tag()
             _active_frequency_tag.key = _frequency_tag_key;
             _active_frequency_tag.value = pmt::from_float(_initial_active_frequency);
             _active_frequency_tag.srcid = pmt::intern(alias());  // Set the srcid using the block's alias
+            std::cout << "Setting active frequency tag manually!" << std::endl;
         }
 
         // if the first sample has a tag, override the active frequency with that attached to the 
@@ -129,6 +130,7 @@ void batched_file_sink_impl::set_initial_active_frequency_tag()
         else if (first_sample_has_tag)
         {
             _active_frequency_tag = vector_wrapped_first_sample_tag[0];
+            std::cout << "Setting active frequency tag from first sample!" << std::endl;
         }
 
         // Otherwise, we have an undefined tag state.
@@ -168,8 +170,6 @@ void batched_file_sink_impl::write_tag_states_to_hdr(int noutput_items) {
         int32_t num_samples_active_frequency = frequency_tag.offset - _active_frequency_tag.offset;
         // Cast as a float (for ease of reading in post-processing)
         float num_samples_active_frequency_as_float = static_cast<float>(num_samples_active_frequency);
-
-        std::cout << pmt::write_string(frequency_tag.value) << std::endl;
 
         // Ensure the PMT value is numeric before attempting conversion
         if (pmt::is_number(_active_frequency_tag.value)) {
