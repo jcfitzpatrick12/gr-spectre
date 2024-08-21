@@ -42,7 +42,7 @@ batched_file_sink_impl::batched_file_sink_impl(std::string parent_dir,
       _bch(_parent_dir, _tag), // create an instance of the bin chunk handler class
       _frequency_tag_key(pmt::string_to_symbol(frequency_tag_key)), // declaring the frequency tag key
       _is_active_frequency_tag_set(false), // the active frequency tag is not set until the first sample in the stream
-      _initial_active_frequency(static_cast<double>(initial_active_frequency)) // if a tag is not available on the very first sample, this float is used by default
+      _initial_active_frequency(initial_active_frequency) // if a tag is not available on the very first sample, this float is used by default
 {
 }
 
@@ -120,7 +120,7 @@ void batched_file_sink_impl::set_initial_active_frequency_tag()
             uint64_t initial_offset = 0;
             _active_frequency_tag.offset = initial_offset;
             _active_frequency_tag.key = _frequency_tag_key;
-            _active_frequency_tag.value = pmt::from_double(_initial_active_frequency);
+            _active_frequency_tag.value = pmt::from_float(_initial_active_frequency);
             _active_frequency_tag.srcid = pmt::intern(alias());  // Set the srcid using the block's alias
         }
 
@@ -169,7 +169,7 @@ void batched_file_sink_impl::write_tag_states_to_hdr(int noutput_items) {
         float num_samples_active_frequency_as_float = static_cast<float>(num_samples_active_frequency);
 
         // Compute the active frequency 
-        float active_frequency = pmt::to_double(_active_frequency_tag.value);
+        float active_frequency = pmt::to_float(_active_frequency_tag.value);
 
         // // print check
         // std::cout << "Active frequency: " << active_frequency << std::endl;
