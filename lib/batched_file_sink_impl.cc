@@ -113,22 +113,23 @@ void batched_file_sink_impl::set_initial_active_frequency_tag()
     // otherwise the active frequency has not yet been set
     else 
     {
+
+        // if the first sample has a tag, set the active frequency with that attached to the 
+        // first sample
+        if (first_sample_has_tag)
+        {
+            _active_frequency_tag = vector_wrapped_first_sample_tag[0];
+            std::cout << "Setting active frequency tag from first sample!" << std::endl;
+        }
+
         // if the user has explicitly specified the initial active frequency (i.e. it is non-zero) 
-        // use this to define the initial active frequency tag 
-        if (_initial_active_frequency != 0) {
+        // override
+        else if (_initial_active_frequency != 0 && !first_sample_has_tag) {
             uint64_t initial_offset = 0;
             _active_frequency_tag.offset = initial_offset;
             _active_frequency_tag.key = _frequency_tag_key;
             _active_frequency_tag.value = pmt::from_float(_initial_active_frequency);
             _active_frequency_tag.srcid = pmt::intern(alias());  // Set the srcid using the block's alias
-        }
-
-        // if the first sample has a tag, override the active frequency with that attached to the 
-        // first sample
-        else if (first_sample_has_tag)
-        {
-            _active_frequency_tag = vector_wrapped_first_sample_tag[0];
-            std::cout << "Setting active frequency tag from first sample!" << std::endl;
         }
 
         // Otherwise, we have an undefined tag state.
