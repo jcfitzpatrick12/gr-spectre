@@ -210,6 +210,9 @@ void batched_file_sink_impl::write_tag_states_to_hdr(int noutput_items) {
             write_to_file(_hdr_file, &active_frequency, sizeof(float));
             write_to_file(_hdr_file, &num_samples_remaining_as_float, sizeof(float));
         } else {
+            // Print the value before throwing the error
+            std::cerr << "Error: Active frequency tag value is not numeric. Value: "
+                      << pmt::write_string(_active_frequency_tag.value) << std::endl;
             throw std::runtime_error("Active frequency tag value is not numeric.");
         }
 
