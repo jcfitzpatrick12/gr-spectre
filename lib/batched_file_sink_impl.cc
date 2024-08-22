@@ -161,7 +161,7 @@ void batched_file_sink_impl::write_tag_states_to_hdr(int noutput_items) {
     int abs_end_index = nitems_read(0) + noutput_items;
 
     // Print the key it's trying to find
-    std::cout << "Looking for tags with key: " << _frequency_tag_key.str() << std::endl;
+    std::cout << "Looking for tags with key: " << pmt::symbol_to_string(_frequency_tag_key) << std::endl;
 
     // Vector to hold all tags in the current range of the work function
     std::vector<tag_t> all_tags;
@@ -178,6 +178,11 @@ void batched_file_sink_impl::write_tag_states_to_hdr(int noutput_items) {
                       << ", offset: " << tag.offset << std::endl;
         }
     }
+
+    // Vector to hold tags that match the _frequency_tag_key
+    // std::vector<tag_t> frequency_tags;
+    // get_tags_in_range(frequency_tags, 0, abs_start_index, abs_end_index, _frequency_tag_key);
+
 
     // Iterate through each tag and compute the number of samples for each tag interval
     for (const tag_t& frequency_tag : all_tags) {
