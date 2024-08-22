@@ -163,6 +163,8 @@ void batched_file_sink_impl::write_tag_states_to_hdr(int noutput_items) {
     std::vector<tag_t> frequency_tags;
     get_tags_in_range(frequency_tags, 0, abs_start_index, abs_end_index, _frequency_tag_key);
 
+    std::cout << "Print test" << std::endl;
+
     // Iterate through each tag and compute the number of samples for each tag interval
     for (const tag_t& frequency_tag : frequency_tags) {
         // Compute the number of samples then update the active tag
