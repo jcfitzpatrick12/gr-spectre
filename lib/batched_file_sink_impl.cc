@@ -159,14 +159,28 @@ void batched_file_sink_impl::write_tag_states_to_hdr(int noutput_items) {
     int abs_start_index = _active_frequency_tag.offset + 1;
     // up until the current range of the work function
     int abs_end_index = nitems_read(0) + noutput_items;
-    // Vector to hold all tags in the current range of the work function
-    std::vector<tag_t> frequency_tags;
-    get_tags_in_range(frequency_tags, 0, abs_start_index, abs_end_index, _frequency_tag_key);
 
-    std::cout << "Print test" << std::endl;
+    // Print the key it's trying to find
+    std::cout << "Looking for tags with key: " << _frequency_tag_key.str() << std::endl;
+
+    // Vector to hold all tags in the current range of the work function
+    std::vector<tag_t> all_tags;
+    get_tags_in_range(all_tags, 0, abs_start_index, abs_end_index);
+
+    // Check if any tags were found
+    if (all_tags.empty()) {
+        std::cout << "No tags found in the range from " << abs_start_index << " to " << abs_end_index << std::endl;
+    } else {
+        std::cout << "Tags found in the range from " << abs_start_index << " to " << abs_end_index << ":" << std::endl;
+        for (const auto& tag : all_tags) {
+            std::cout << "Tag key: " << pmt::symbol_to_string(tag.key) 
+                      << ", value: " << pmt::write_string(tag.value) 
+                      << ", offset: " << tag.offset << std::endl;
+        }
+    }
 
     // Iterate through each tag and compute the number of samples for each tag interval
-    for (const tag_t& frequency_tag : frequency_tags) {
+    for (const tag_t& frequency_tag : all_tags) {
         // Compute the number of samples then update the active tag
         int32_t num_samples_active_frequency = frequency_tag.offset - _active_frequency_tag.offset;
         // Cast as a float (for ease of reading in post-processing)
