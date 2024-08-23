@@ -165,7 +165,7 @@ void batched_file_sink_impl::write_tag_states_to_hdr(int noutput_items) {
 
     // Vector to hold all tags in the current range of the work function
     std::vector<tag_t> all_tags;
-    get_tags_in_range(all_tags, 0, abs_start_index, abs_end_index);
+    get_tags_in_range(all_tags, 0, abs_start_index, abs_end_index, _frequency_tag_key);
 
     // Check if any tags were found
     if (all_tags.empty()) {
