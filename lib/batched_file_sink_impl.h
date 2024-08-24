@@ -38,11 +38,12 @@ private:
     bool _open_new_file; // boolean determines whether new files should be opened at each call of the work function 
     float _elapsed_time; // tracks the elapsed time at each call of the work function
     bin_chunk_helper _bch; // class which offloads some of the chunk handling (computes the time stamp and file name)
-    const pmt::pmt_t _frequency_key; // declare the tag key which denotes the frequency tag
+    const pmt::pmt_t _frequency_tag_key; // declare the tag key which denotes the frequency tag
     // by definition, if a frequency tag is found at absolute index N_start, and the next tag is at absolute index N_end
     // all samples with absolute index [N_start, N_end) were collected at frequency corresponding to that tag at N_start
     tag_t _active_frequency_tag; // member function to keep track of the active tag
     bool _is_active_frequency_tag_set; // boolean to determine whether the active frequency tag is set
+    float _initial_active_frequency; // float to inform of initial active frequency if tag is not available. Ignored if tag is available.
 
 public:
     batched_file_sink_impl(
@@ -50,7 +51,9 @@ public:
         std::string tag,
         int chunk_size,
         int samp_rate,
-        bool sweeping
+        bool sweeping,
+        std::string frequency_tag_key,
+        float initial_active_frequency
     ); // Constructor. 
 
     ~batched_file_sink_impl();// Destructor.

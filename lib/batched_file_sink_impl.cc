@@ -15,16 +15,20 @@ batched_file_sink::sptr batched_file_sink::make(std::string parent_dir,
                                                 std::string tag,
                                                 int chunk_size,
                                                 int samp_rate,
-                                                bool sweeping) {
+                                                bool sweeping,
+                                                std::string frequency_tag_key,
+                                                float initial_active_frequency) {
     return gnuradio::make_block_sptr<batched_file_sink_impl>(
-        parent_dir, tag, chunk_size, samp_rate, sweeping);
+        parent_dir, tag, chunk_size, samp_rate, sweeping, frequency_tag_key, initial_active_frequency);
 }
 
 batched_file_sink_impl::batched_file_sink_impl(std::string parent_dir,
                                                std::string tag,
                                                int chunk_size,
                                                int samp_rate,
-                                               bool sweeping)
+                                               bool sweeping,
+                                               std::string frequency_tag_key,
+                                               float initial_active_frequency)
     : gr::sync_block("batched_file_sink",
                      gr::io_signature::make(1, 1, sizeof(input_type)),
                      gr::io_signature::make(0, 0, 0)),
@@ -36,8 +40,9 @@ batched_file_sink_impl::batched_file_sink_impl(std::string parent_dir,
       _open_new_file(true), // impose that we will open a new file at the first call of the work function
       _elapsed_time(0), // elapsed time is zero initially, by definition.
       _bch(_parent_dir, _tag), // create an instance of the bin chunk handler class
-      _frequency_key(pmt::string_to_symbol("rx_freq")), // declaring the frequency tag key
-      _is_active_frequency_tag_set(false) // the active frequency tag is not set until the first sample in the stream
+      _frequency_tag_key(pmt::string_to_symbol(frequency_tag_key)), // declaring the frequency tag key
+      _is_active_frequency_tag_set(false), // the active frequency tag is not set until the first sample in the stream
+      _initial_active_frequency(initial_active_frequency) // if a tag is not available on the very first sample, this float is used by default
 {
 }
 
@@ -96,7 +101,7 @@ void batched_file_sink_impl::set_initial_active_frequency_tag()
     int first_sample_abs_index = nitems_read(0);
     // now populate a vector, v, which will contain one element if the first sample is tagged, and is empty otherwise
     std::vector<tag_t> vector_wrapped_first_sample_tag;
-    get_tags_in_range(vector_wrapped_first_sample_tag, 0, first_sample_abs_index, first_sample_abs_index + 1, _frequency_key);
+    get_tags_in_range(vector_wrapped_first_sample_tag, 0, first_sample_abs_index, first_sample_abs_index + 1, _frequency_tag_key);
     // inspect whether the first sample has a tag or not
     bool first_sample_has_tag = !vector_wrapped_first_sample_tag.empty();
 
@@ -107,11 +112,24 @@ void batched_file_sink_impl::set_initial_active_frequency_tag()
     }
     // otherwise the active frequency has not yet been set
     else 
-    {   
-        // if the first sample has a tag, use this to update the active frequency tag 
+    {
+
+        // if the first sample has a tag, set the active frequency with that attached to the 
+        // first sample
         if (first_sample_has_tag)
         {
             _active_frequency_tag = vector_wrapped_first_sample_tag[0];
+        }
+
+        // if the user has explicitly specified the initial active frequency (i.e. it is non-zero) 
+        // AND the first sample does not have a tag
+        // then override the active frequency tag with that defined by the user
+        else if (_initial_active_frequency != 0 && !first_sample_has_tag) {
+            uint64_t initial_offset = 0;
+            _active_frequency_tag.offset = initial_offset;
+            _active_frequency_tag.key = _frequency_tag_key;
+            _active_frequency_tag.value = pmt::from_float(_initial_active_frequency);
+            _active_frequency_tag.srcid = pmt::intern(alias());  // Set the srcid using the block's alias
         }
 
         // Otherwise, we have an undefined tag state.
@@ -123,7 +141,8 @@ void batched_file_sink_impl::set_initial_active_frequency_tag()
         Therefore, for any IQ sample z_k in the stream, there exists a tag tag_i where i <= k, which we call the 
         active tag for z_k. From this, the first sample (z_0) must have a corresponding tag at absolute index 0. 
         If _is_active_frequency_tag_set is false (i.e. during the first call of the work function) and the first sample 
-        is not tagged, we cannot determine its corresponding frequency, leading to an undefined state.
+        is not tagged (and no additional information has been provided w.r.t. the initial state) we cannot determine 
+        its corresponding frequency, leading to an undefined state.
         */
         else
         {
@@ -134,67 +153,76 @@ void batched_file_sink_impl::set_initial_active_frequency_tag()
     _is_active_frequency_tag_set = true;
 }
 
-void batched_file_sink_impl::write_tag_states_to_hdr(int noutput_items) {  
+
+void batched_file_sink_impl::write_tag_states_to_hdr(int noutput_items) {
     // search for tags subsequent to the current active tag
-    int abs_start_index  = _active_frequency_tag.offset + 1;
+    int abs_start_index = _active_frequency_tag.offset + 1;
     // up until the current range of the work function
     int abs_end_index = nitems_read(0) + noutput_items;
+
     // Vector to hold all tags in the current range of the work function
     std::vector<tag_t> frequency_tags;
-    get_tags_in_range(frequency_tags, 0, abs_start_index, abs_end_index, _frequency_key);
+    get_tags_in_range(frequency_tags, 0, abs_start_index, abs_end_index, _frequency_tag_key);
+
 
     // Iterate through each tag and compute the number of samples for each tag interval
-    for (const tag_t &frequency_tag : frequency_tags) {
+    for (const tag_t& frequency_tag : frequency_tags) {
         // Compute the number of samples then update the active tag
         int32_t num_samples_active_frequency = frequency_tag.offset - _active_frequency_tag.offset;
-        // cast as a float (for ease of reading in post-processing)
+        // Cast as a float (for ease of reading in post-processing)
         float num_samples_active_frequency_as_float = static_cast<float>(num_samples_active_frequency);
 
-        // Compute the active frequency 
-        float active_frequency = pmt::to_float(_active_frequency_tag.value);
+        // Ensure the PMT value is numeric before attempting conversion
+        if (pmt::is_number(_active_frequency_tag.value)) {
+            float active_frequency = static_cast<float>(pmt::to_double(_active_frequency_tag.value));
 
-        // // print check
-        // std::cout << "Active frequency: " << active_frequency << std::endl;
-        // std::cout << "Num samples: " << num_samples_active_frequency <<std::endl;
+            // Write the active frequency and the number of samples to the header file
+            write_to_file(_hdr_file, &active_frequency, sizeof(float));
+            write_to_file(_hdr_file, &num_samples_active_frequency_as_float, sizeof(float));
+        } else {
+            // Print the value before throwing the error
+            std::cerr << "Error: Active frequency tag value is not numeric. Value: "
+                      << pmt::write_string(_active_frequency_tag.value) << std::endl;
+            throw std::runtime_error("Active frequency tag value is not numeric.");
+        }
 
-        // and write to file
-        write_to_file(_hdr_file, &active_frequency, sizeof(float));
-        write_to_file(_hdr_file, &num_samples_active_frequency_as_float, sizeof(float));
         // Update the active frequency
         _active_frequency_tag = frequency_tag;
     }
 
-    // if _open_new_file is set to true, then we will be opening a new file at the next call of the work function.
-    // so we need to do some clean-up in this case
-    if (_open_new_file) 
-    {
+    // If _open_new_file is set to true, then we will be opening a new file at the next call of the work function.
+    // So we need to do some clean-up in this case
+    if (_open_new_file) {
         /*
-        Essentially, at this moment we have handled all the tags in the current call of the work function. Thus, there is 
-        no "next tag" to evaluate the total number of samples associated with the current active tag. For a clean handover 
-        to the next file, we compute the number of samples REMAINING at the active tag in the current call of the work 
-        function.
+        Essentially, at this moment we have handled all the tags in the current call of the work function. 
+        Thus, there is no "next tag" to evaluate the total number of samples associated with the current active tag. 
+        For a clean handover to the next file, we compute the number of samples REMAINING at the active tag in the current call of the work function.
         
         In this way, we will have declared for every IQ sample dumped to the bin file, what frequency it was collected at.
         */
-        // compute the number of remaining samples and write to the header file ...
+        // Compute the number of remaining samples and write to the header file ...
         int32_t num_samples_remaining = (nitems_read(0) + noutput_items) - _active_frequency_tag.offset;
-        // cast as a float (for ease of reading in post-processing)
+        // Cast as a float (for ease of reading in post-processing)
         float num_samples_remaining_as_float = static_cast<float>(num_samples_remaining);
-        //
-        // Compute the active frequency 
-        float active_frequency = pmt::to_float(_active_frequency_tag.value);
 
-        // // print check
-        // std::cout << "Dangling frequency: " << active_frequency << std::endl;
-        // std::cout << "Samples remaining: " << num_samples_remaining <<std::endl;
+        // Ensure the PMT value is numeric before attempting conversion
+        if (pmt::is_number(_active_frequency_tag.value)) {
+            float active_frequency = static_cast<float>(pmt::to_double(_active_frequency_tag.value));
 
-        // write this to file
-        write_to_file(_hdr_file, &active_frequency, sizeof(float));
-        write_to_file(_hdr_file, &num_samples_remaining_as_float, sizeof(float));
+            // Write this to file
+            write_to_file(_hdr_file, &active_frequency, sizeof(float));
+            write_to_file(_hdr_file, &num_samples_remaining_as_float, sizeof(float));
+        } else {
+            // Print the value before throwing the error
+            std::cerr << "Error: Active frequency tag value is not numeric. Value: "
+                      << pmt::write_string(_active_frequency_tag.value) << std::endl;
+            throw std::runtime_error("Active frequency tag value is not numeric.");
+        }
 
-        // don't update the active frequency, as we will initialise this at the next call of the work function
+        // Don't update the active frequency, as we will initialise this at the next call of the work function
     }
 }
+
 
 int batched_file_sink_impl::work(
     int noutput_items,
