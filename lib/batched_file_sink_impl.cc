@@ -38,7 +38,6 @@ batched_file_sink_impl::batched_file_sink_impl(std::string parent_dir,
       _samp_rate(samp_rate), /**< user input */
       _sweeping(sweeping), /**< user input */
       _open_new_file(true), // impose that we will open a new file at the first call of the work function
-      _elapsed_time(0), // elapsed time is zero initially, by definition.
       _bch(_parent_dir, _tag), // create an instance of the bin chunk handler class
       _frequency_tag_key(pmt::string_to_symbol(frequency_tag_key)), // declaring the frequency tag key
       _is_active_frequency_tag_set(false), // the active frequency tag is not set until the first sample in the stream
@@ -237,7 +236,8 @@ int batched_file_sink_impl::work(
         int32_t millisecond_correction = _bch.get_millisecond_correction(); // extract the millisecond correction 
         float millisecond_correction_as_float = static_cast<float>(millisecond_correction); // convert to float (for consistency when reading, we will check its integerness when reading)
         write_to_file(_hdr_file, &millisecond_correction_as_float, sizeof(float)); // and write to the hdr file
-        _elapsed_time = 0; // Reset elapsed time when a new file is opened
+        // Reset the steady clock when a new file is opened
+        _start_time = std::chrono::steady_clock::now();
         
         if (_sweeping) {
             set_initial_active_frequency_tag();
@@ -247,12 +247,15 @@ int batched_file_sink_impl::work(
     /* dump the contents input buffer to the bin file */
     write_to_file(_bin_file, input_items[0], sizeof(gr_complex) * noutput_items);
 
-    /* inferring elapsed time based on the number of samples processed */
-    _elapsed_time += noutput_items * (1.0 / _samp_rate);
-    // If elapsed time is greater than the (input) chunk_size, at the next iteration, we will open a new file
-    if (_elapsed_time >= _chunk_size) {
+    /* Calculate the elapsed time using chrono's built-in duration comparisons */
+    auto current_time = std::chrono::steady_clock::now();
+    auto elapsed_seconds = std::chrono::duration_cast<std::chrono::seconds>(current_time - _start_time);
+
+    // Compare elapsed time (in seconds) with chunk_size
+    if (elapsed_seconds.count() >= _chunk_size) {
         _open_new_file = true;
     }
+
 
     /* if the sweeping flag is true, write the frequency tag information to the detached header. */
     if (_sweeping) {
