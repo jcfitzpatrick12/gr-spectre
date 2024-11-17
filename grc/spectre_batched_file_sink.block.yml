@@ -28,7 +28,7 @@ parameters:
     default: 32000
 
   - id: is_sweeping
-    label: Sweeping [True / False]
+    label: Frequency sweeping
     dtype: bool
     default: 'False'
     options: ['False', 'True']
@@ -37,13 +37,13 @@ parameters:
     label: Frequency Tag Key
     dtype: string
     default: freq
-    hide: ${is_sweeping == False}
+    hide: ${not is_sweeping}
 
   - id: initial_center_frequency
     label: Initial Center Frequency [Hz]
     dtype: float
     default: 0
-    hide: ${is_sweeping == False}
+    hide: ${not is_sweeping}
 
 inputs:
   - label: in0
