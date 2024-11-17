@@ -10,31 +10,40 @@ parameters:
   - id: parent_dir_path
     label: Parent directory path
     dtype: string
+    default: ./chunks/
+
   - id: tag
     label: Tag
     dtype: string
+    defalt: my-tag
+
   - id: batch_size
     label: Batch size [s]
     dtype: int
     default: 3
+
   - id: samp_rate
     label: Sample rate [samples/s]
     dtype: int
     default: 32000
+
   - id: is_sweeping
     label: Sweeping [True / False]
     dtype: bool
-    default: False
+    default: 'False'
+    options: ['False', 'True']
+
   - id: frequency_tag_key
     label: Frequency Tag Key
     dtype: string
     default: freq
-    hide: ${!is_sweeping}
+    hide: ${not is_sweeping}
+
   - id: initial_center_frequency
     label: Initial Center Frequency [Hz]
     dtype: float
     default: 0
-    hide: ${!is_sweeping}
+    hide: ${not is_sweeping}
 
 inputs:
   - label: in0
