@@ -10,7 +10,7 @@ parameters:
   - id: parent_dir_path
     label: Parent directory path
     dtype: string
-    default: './chunks/'
+    default: './'
 
   - id: tag
     label: Tag
