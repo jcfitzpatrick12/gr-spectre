@@ -10,12 +10,12 @@ parameters:
   - id: parent_dir_path
     label: Parent directory path
     dtype: string
-    default: ./chunks/
+    default: './chunks/'
 
   - id: tag
     label: Tag
     dtype: string
-    defalt: my-tag
+    default: 'my-tag'
 
   - id: batch_size
     label: Batch size [s]
@@ -37,13 +37,13 @@ parameters:
     label: Frequency Tag Key
     dtype: string
     default: freq
-    hide: ${not is_sweeping}
+    hide: ${is_sweeping == 'False'}
 
   - id: initial_center_frequency
     label: Initial Center Frequency [Hz]
     dtype: float
     default: 0
-    hide: ${not is_sweeping}
+    hide: ${is_sweeping == 'False'}
 
 inputs:
   - label: in0
