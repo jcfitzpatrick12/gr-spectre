@@ -38,13 +38,13 @@ parameters:
     label: Frequency Tag Key
     dtype: string
     default: freq
-    hide: "not is_sweeping"
+    hide: ${ 'part' if not is_sweeping else 'none' }
 
   - id: initial_center_frequency
     label: Initial Center Frequency [Hz]
     dtype: float
     default: 0
-    hide: "not is_sweeping"
+    hide: ${ 'part' if not is_sweeping else 'none' }
 
 inputs:
   - label: in0
