@@ -5,261 +5,326 @@
 
 #include "batched_file_sink_impl.h"
 #include <gnuradio/io_signature.h>
+#include <filesystem>
+#include <fstream>
 
 namespace gr {
 namespace spectre {
 
 using input_type = gr_complex;
-
-batched_file_sink::sptr batched_file_sink::make(std::string parent_dir,
-                                                std::string tag,
-                                                int chunk_size,
-                                                int samp_rate,
-                                                bool sweeping,
-                                                std::string frequency_tag_key,
-                                                float initial_active_frequency) {
-    return gnuradio::make_block_sptr<batched_file_sink_impl>(
-        parent_dir, tag, chunk_size, samp_rate, sweeping, frequency_tag_key, initial_active_frequency);
-}
-
-batched_file_sink_impl::batched_file_sink_impl(std::string parent_dir,
-                                               std::string tag,
-                                               int chunk_size,
-                                               int samp_rate,
-                                               bool sweeping,
-                                               std::string frequency_tag_key,
-                                               float initial_active_frequency)
-    : gr::sync_block("batched_file_sink",
-                     gr::io_signature::make(1, 1, sizeof(input_type)),
-                     gr::io_signature::make(0, 0, 0)),
-      _parent_dir(std::move(parent_dir)), /**< user input */
-      _tag(std::move(tag)), /**< user input */
-      _chunk_size(chunk_size),/**< user input */
-      _samp_rate(samp_rate), /**< user input */
-      _sweeping(sweeping), /**< user input */
-      _open_new_file(true), // impose that we will open a new file at the first call of the work function
-      _elapsed_time(0), // elapsed time is zero initially, by definition.
-      _bch(_parent_dir, _tag), // create an instance of the bin chunk handler class
-      _frequency_tag_key(pmt::string_to_symbol(frequency_tag_key)), // declaring the frequency tag key
-      _is_active_frequency_tag_set(false), // the active frequency tag is not set until the first sample in the stream
-      _initial_active_frequency(initial_active_frequency) // if a tag is not available on the very first sample, this float is used by default
+batched_file_sink::sptr batched_file_sink::make(const std::string parent_dir_path,
+                                                const std::string tag,
+                                                const float batch_size,
+                                                const int samp_rate,
+                                                const bool is_sweeping,
+                                                const std::string frequency_tag_key,
+                                                const float initial_center_frequency)
 {
-}
-
-batched_file_sink_impl::~batched_file_sink_impl() {
-    if (_bin_file.is_open()) {
-        _bin_file.close();
-    }
-
-    if (_hdr_file.is_open()) {
-        _hdr_file.close();
-    }
+    return gnuradio::make_block_sptr<batched_file_sink_impl>(parent_dir_path,
+                                                             tag,
+                                                             batch_size,
+                                                             samp_rate,
+                                                             is_sweeping,
+                                                             frequency_tag_key,
+                                                             initial_center_frequency);
 }
 
 
-void batched_file_sink_impl::open_file(file_type ftype) {
-    std::ofstream* file = nullptr;
-    fs::path file_path;
+// Private constructor.
+batched_file_sink_impl::batched_file_sink_impl(const std::string parent_dir_path,
+                                               const std::string tag,
+                                               const float batch_size,
+                                               const int samp_rate,
+                                               const bool is_sweeping,
+                                               const std::string frequency_tag_key,
+                                               const float initial_center_frequency)
+    : gr::sync_block("batched_file_sink",
+                     gr::io_signature::make(
+                         1 /* min inputs */, 1 /* max inputs */, sizeof(input_type)),
+                     gr::io_signature::make(0, 0, 0)),
+      _parent_dir_path(parent_dir_path),
+      _tag(tag),
+      _sampling_interval( 1.0f / samp_rate ),
+      _samples_per_batch(batch_size / _sampling_interval),
+      _is_sweeping(is_sweeping),
+      _frequency_tag_key(pmt::string_to_symbol(frequency_tag_key)),
+      _initial_center_frequency(initial_center_frequency),
+      _create_new_batch(true),
+      _active_tag(), 
+      _default_tag(),
+      _input_port(0)
+{ 
 
-    // Determine file type and set file path
-    switch (ftype) {
-        case file_type::BIN:
-            file = &_bin_file;
-            file_path = _bch.get_bin_absolute_path();
-            break;
-        case file_type::HDR:
-            file = &_hdr_file;
-            file_path = _bch.get_hdr_absolute_path();
-            break;
-        default:
-            throw std::invalid_argument("Invalid file type specified.");
-    }
+}
 
-    // Close the file if already open
-    if (file->is_open()) {
-        file->close();
-    }
 
-    // Create necessary directories if they don't exist
-    fs::path parent_path_with_date_dirs = _bch.get_parent_path_with_date_dirs();
-    if (!fs::exists(parent_path_with_date_dirs)) {
-        try {
-            fs::create_directories(parent_path_with_date_dirs);
-        } catch (const fs::filesystem_error& e) {
-            throw std::runtime_error("Failed to create directories: " + parent_path_with_date_dirs.string() + ", error: " + e.what());
-        }
-    }
+// Virtual destructor.
+batched_file_sink_impl::~batched_file_sink_impl() 
+{
+    _bin_file.close();
+    _hdr_file.close();
+}
 
-    // Open the file for writing
-    file->open(file_path, std::ios::binary | std::ios::out);
-    if (!file->is_open()) {
-        throw std::runtime_error("Failed to open file: " + file_path.string());
+
+std::string batched_file_sink_impl::get_file_extension(batch_file_type file_type)
+{
+    switch (file_type) 
+    {
+        case batch_file_type::BIN: return ".bin";
+        case batch_file_type::HDR: return ".hdr";
+        default: throw std::invalid_argument("Unexpected batch file type!");
     }
 }
-void batched_file_sink_impl::set_initial_active_frequency_tag() 
+
+
+batch_time batched_file_sink_impl::get_batch_time()
+{
+    using namespace std::chrono;
+
+    // Capture the current system time as a time point.
+    auto now = system_clock::now();
+
+    // Compute the time elapsed since the Unix epoch (00:00:00 1st Jan 1970 UTC)
+    time_t now_c = system_clock::to_time_t(now);
+    // Copy the `std::tm` struct since `std::gmtime` returns a pointer to static memory.
+    std::tm* utc_datetime = std::gmtime(&now_c);
+
+    // Compute the millisecond fractional component of the current system time.
+    auto time_since_unix_epoch = now.time_since_epoch();
+    auto seconds_since_unix_epoch = seconds(static_cast<int64_t>(now_c));
+    auto chrono_millisecond_component = duration_cast<milliseconds>(time_since_unix_epoch - seconds_since_unix_epoch);
+    int64_t millisecond_component { chrono_millisecond_component.count() };
+
+    // Return the `batch_time` object with a copy of `std::tm`.
+    return batch_time{utc_datetime, millisecond_component};
+}
+
+
+fs::path batched_file_sink_impl::get_absolute_batch_file_path(std::tm* utc_datetime, 
+                                                              batch_file_type file_type) const
 {    
-    int first_sample_abs_index = nitems_read(0);
-    // now populate a vector, v, which will contain one element if the first sample is tagged, and is empty otherwise
-    std::vector<tag_t> vector_wrapped_first_sample_tag;
-    get_tags_in_range(vector_wrapped_first_sample_tag, 0, first_sample_abs_index, first_sample_abs_index + 1, _frequency_tag_key);
-    // inspect whether the first sample has a tag or not
-    bool first_sample_has_tag = !vector_wrapped_first_sample_tag.empty();
-
-    // if the active frequency has already been set, update the offset to coincide with the first sample as of this call to the work function
-    if (_is_active_frequency_tag_set) 
-    {
-        _active_frequency_tag.offset = nitems_read(0);
-    }
-    // otherwise the active frequency has not yet been set
-    else 
-    {
-
-        // if the first sample has a tag, set the active frequency with that attached to the 
-        // first sample
-        if (first_sample_has_tag)
-        {
-            _active_frequency_tag = vector_wrapped_first_sample_tag[0];
-        }
-
-        // if the user has explicitly specified the initial active frequency (i.e. it is non-zero) 
-        // AND the first sample does not have a tag
-        // then override the active frequency tag with that defined by the user
-        else if (_initial_active_frequency != 0 && !first_sample_has_tag) {
-            uint64_t initial_offset = 0;
-            _active_frequency_tag.offset = initial_offset;
-            _active_frequency_tag.key = _frequency_tag_key;
-            _active_frequency_tag.value = pmt::from_float(_initial_active_frequency);
-            _active_frequency_tag.srcid = pmt::intern(alias());  // Set the srcid using the block's alias
-        }
-
-        // Otherwise, we have an undefined tag state.
-        /*
-        Why is this undefined? We need to know the frequency corresponding to each IQ sample in the stream. 
-        Consider two neighbouring frequency tags, tag_i and tag_j, with absolute indices i and j, where i < j. 
-        All samples z_k, with k in [i, j), correspond to the frequency tag_i.value. 
-
-        Therefore, for any IQ sample z_k in the stream, there exists a tag tag_i where i <= k, which we call the 
-        active tag for z_k. From this, the first sample (z_0) must have a corresponding tag at absolute index 0. 
-        If _is_active_frequency_tag_set is false (i.e. during the first call of the work function) and the first sample 
-        is not tagged (and no additional information has been provided w.r.t. the initial state) we cannot determine 
-        its corresponding frequency, leading to an undefined state.
-        */
-        else
-        {
-            throw std::runtime_error("Undefined tag state, the first sample in the stream must be frequency tagged!");
-        }
-    }
-    // update member variable to note that the active tag is now set
-    _is_active_frequency_tag_set = true;
+    std::ostringstream oss;
+    oss << std::put_time(utc_datetime, "%Y/%m/%d/") 
+        << std::put_time(utc_datetime, "%Y-%m-%dT%H:%M:%S")
+        << "_"
+        << _tag
+        << get_file_extension(file_type);
+    return _parent_dir_path / fs::path(oss.str());    
 }
 
 
-void batched_file_sink_impl::write_tag_states_to_hdr(int noutput_items) {
-    // search for tags subsequent to the current active tag
-    int abs_start_index = _active_frequency_tag.offset + 1;
-    // up until the current range of the work function
-    int abs_end_index = nitems_read(0) + noutput_items;
-
-    // Vector to hold all tags in the current range of the work function
-    std::vector<tag_t> frequency_tags;
-    get_tags_in_range(frequency_tags, 0, abs_start_index, abs_end_index, _frequency_tag_key);
+batch_metadata batched_file_sink_impl::get_new_batch_metadata() const
+{
+    batch_time current_batch_time { get_batch_time() };
+    fs::path bin_file_path { get_absolute_batch_file_path(current_batch_time.utc_datetime, batch_file_type::BIN ) };
+    fs::path hdr_file_path { get_absolute_batch_file_path(current_batch_time.utc_datetime, batch_file_type::HDR ) };
+    return batch_metadata {current_batch_time, bin_file_path, hdr_file_path};
+}
 
 
-    // Iterate through each tag and compute the number of samples for each tag interval
-    for (const tag_t& frequency_tag : frequency_tags) {
-        // Compute the number of samples then update the active tag
-        int32_t num_samples_active_frequency = frequency_tag.offset - _active_frequency_tag.offset;
-        // Cast as a float (for ease of reading in post-processing)
-        float num_samples_active_frequency_as_float = static_cast<float>(num_samples_active_frequency);
-
-        // Ensure the PMT value is numeric before attempting conversion
-        if (pmt::is_number(_active_frequency_tag.value)) {
-            float active_frequency = static_cast<float>(pmt::to_double(_active_frequency_tag.value));
-
-            // Write the active frequency and the number of samples to the header file
-            write_to_file(_hdr_file, &active_frequency, sizeof(float));
-            write_to_file(_hdr_file, &num_samples_active_frequency_as_float, sizeof(float));
-        } else {
-            // Print the value before throwing the error
-            std::cerr << "Error: Active frequency tag value is not numeric. Value: "
-                      << pmt::write_string(_active_frequency_tag.value) << std::endl;
-            throw std::runtime_error("Active frequency tag value is not numeric.");
-        }
-
-        // Update the active frequency
-        _active_frequency_tag = frequency_tag;
+void batched_file_sink_impl::open_batch_file(std::ofstream& file,
+                                             fs::path file_path)
+{
+    // Create the parent path if it does not already exist.
+    fs::path dated_parent_directory { file_path.parent_path() };
+    if (!fs::exists(dated_parent_directory))
+    {
+        fs::create_directories(dated_parent_directory);
+    }
+    // If the file is open, close it before opening another file.
+    if (file.is_open())
+    {
+        file.close();
     }
 
-    // If _open_new_file is set to true, then we will be opening a new file at the next call of the work function.
-    // So we need to do some clean-up in this case
-    if (_open_new_file) {
-        /*
-        Essentially, at this moment we have handled all the tags in the current call of the work function. 
-        Thus, there is no "next tag" to evaluate the total number of samples associated with the current active tag. 
-        For a clean handover to the next file, we compute the number of samples REMAINING at the active tag in the current call of the work function.
-        
-        In this way, we will have declared for every IQ sample dumped to the bin file, what frequency it was collected at.
-        */
-        // Compute the number of remaining samples and write to the header file ...
-        int32_t num_samples_remaining = (nitems_read(0) + noutput_items) - _active_frequency_tag.offset;
-        // Cast as a float (for ease of reading in post-processing)
-        float num_samples_remaining_as_float = static_cast<float>(num_samples_remaining);
+    // Open a new file at the appropriate file path.
+    file.open(file_path, std::ios::binary);
+}
 
-        // Ensure the PMT value is numeric before attempting conversion
-        if (pmt::is_number(_active_frequency_tag.value)) {
-            float active_frequency = static_cast<float>(pmt::to_double(_active_frequency_tag.value));
 
-            // Write this to file
-            write_to_file(_hdr_file, &active_frequency, sizeof(float));
-            write_to_file(_hdr_file, &num_samples_remaining_as_float, sizeof(float));
-        } else {
-            // Print the value before throwing the error
-            std::cerr << "Error: Active frequency tag value is not numeric. Value: "
-                      << pmt::write_string(_active_frequency_tag.value) << std::endl;
-            throw std::runtime_error("Active frequency tag value is not numeric.");
-        }
+void batched_file_sink_impl::write_millisecond_component_to_detached_header()
+{
+    // Cast as a float for consistent reading back in SPECTRE.
+    float millisecond_component { static_cast<float>(_batch_metadata.time.millisecond_component) };
+    write_to_file(_hdr_file, &millisecond_component, 1);
+}
 
-        // Don't update the active frequency, as we will initialise this at the next call of the work function
+
+bool batched_file_sink_impl::tag_is_set(tag_t tag) const
+{ 
+    return !( tag == _default_tag);
+}
+
+
+std::optional<tag_t> batched_file_sink_impl::get_tag_from_first_sample()
+{   
+    // "tags" is a vector which will store a single tag if it exists for the first sample,
+    // and is empty otherwise.
+    std::vector<tag_t> tags;
+    uint64_t rel_start { 0 };
+    uint64_t rel_end { 1 };
+    get_tags_in_window(tags, 
+                       _input_port, 
+                       rel_start, rel_end, 
+                       _frequency_tag_key);
+
+    if (tags.empty())
+    {
+        return std::nullopt;
+    }
+    else
+    {
+        return tags[0];
     }
 }
 
 
-int batched_file_sink_impl::work(
-    int noutput_items,
-    gr_vector_const_void_star& input_items,
-    gr_vector_void_star& output_items
-) {
-    if (_open_new_file) {
-        _open_new_file = false; // ensure we won't open another file until _open_new_file is set back to true
-        _bch.update(); // effectively set the header and binary file paths, and compute the ms correction
-        open_file(file_type::BIN); // open the binary file ready for the raw IQ samples
-        open_file(file_type::HDR); // open the detached header ready for metadata writing
-        int32_t millisecond_correction = _bch.get_millisecond_correction(); // extract the millisecond correction 
-        float millisecond_correction_as_float = static_cast<float>(millisecond_correction); // convert to float (for consistency when reading, we will check its integerness when reading)
-        write_to_file(_hdr_file, &millisecond_correction_as_float, sizeof(float)); // and write to the hdr file
-        _elapsed_time = 0; // Reset elapsed time when a new file is opened
-        
-        if (_sweeping) {
-            set_initial_active_frequency_tag();
-        }
+bool batched_file_sink_impl::initial_center_frequency_is_set() const
+{
+    return (_initial_center_frequency != 0);
+}
+
+
+void batched_file_sink_impl::set_initial_active_tag()
+{
+    // If the first sample has a tag, use that!
+    std::optional<tag_t> first_tag = get_tag_from_first_sample();
+    if ( first_tag )
+    {
+        _active_tag = *first_tag;
+        return;
     }
 
-    /* dump the contents input buffer to the bin file */
-    write_to_file(_bin_file, input_items[0], sizeof(gr_complex) * noutput_items);
-
-    /* inferring elapsed time based on the number of samples processed */
-    _elapsed_time += noutput_items * (1.0 / _samp_rate);
-    // If elapsed time is greater than the (input) chunk_size, at the next iteration, we will open a new file
-    if (_elapsed_time >= _chunk_size) {
-        _open_new_file = true;
+    // If a tag is already set, update the offset for the current work function call.
+    if ( tag_is_set(_active_tag) ) 
+    {
+        _active_tag.offset = nitems_read(0);
+        return;
     }
 
-    /* if the sweeping flag is true, write the frequency tag information to the detached header. */
-    if (_sweeping) {
-        write_tag_states_to_hdr(noutput_items);
+    // If no tag is set, use the user-defined initial center frequency to define the active tag.
+    // This should only ever be reached at the first call of the work function.
+    if ( initial_center_frequency_is_set() )
+    {
+        // Use zero here, as the tag is attached to the first in the stream.
+        _active_tag.offset = 0;
+        _active_tag.key = _frequency_tag_key;
+        _active_tag.value = pmt::from_float(_initial_center_frequency);
+        _active_tag.srcid = pmt::intern(alias());
+        return;
     }
+
+    // If none of the above conditions are met, throw an error.
+    throw std::runtime_error(
+        "Undefined tag state: Unable to infer center frequency of the first sample. "
+        "Verify input tags or set an initial center frequency."
+    );
+}
+
+std::vector<float> batched_file_sink_impl::get_num_samples_per_center_frequency(int noutput_items)
+{
+    // Get all frequency tags ranging from the current active tag (in absolute item time)
+    // to the end of the current call to work (in absolute item time)
+    std::vector<tag_t> tags;
+    int abs_start { _active_tag.offset + 1 };
+    int abs_end { nitems_read(_input_port) + noutput_items };
+    get_tags_in_range(tags, 
+                      _input_port, 
+                      abs_start, abs_end, 
+                      _frequency_tag_key);
+ 
+    // Create a vector which will hold the number of samples per center frequency
+    // That is, effectively, an ordered list of pairs (freq_i, num_samples_at_freq_i)
+    // All numerical values are cast as floats for consistent reading back in SPECTRE.
+    int num_tags { tags.size() };
+    int num_elements = ( 2 * num_tags );
+    std::vector<float> sweep_metadata(num_elements, 0.0f);
+
+    for ( int n {0}; n < num_tags; n++)
+    {
+        tag_t next_tag { tags[n] };
+        // Infer the number of samples at each center frequency through the tag offsets.
+        int num_samples { next_tag.offset - _active_tag.offset };
+        float active_frequency_f { pmt::to_float(_active_tag.value) };
+        float num_samples_f { static_cast<float>(num_samples) };
+        // Copy the values into the array.
+        sweep_metadata[ 2*n ] = active_frequency_f;
+        sweep_metadata[ 2*n + 1 ] = num_samples_f;
+        // Update the active tag
+        _active_tag = next_tag;
+    }
+
+    if (_create_new_batch)
+    {
+        // Essentially, at this moment we have handled all the tags in the current call of the work function. 
+        // Thus, there is no "next tag" to evaluate the total number of samples associated with the current active tag. 
+        // For a clean handover to the next file, we compute the number of samples remaining at the active tag in the current call of the work function.
+        // In this way, we will have declared for every IQ sample dumped to the bin file, what frequency it was collected at.
+
+        int num_samples_remaining = abs_end - _active_tag.offset;
+        float active_frequency_f { pmt::to_float(_active_tag.value) };
+        float num_samples_remaining_f = static_cast<float>(num_samples_remaining);
+        sweep_metadata.push_back(active_frequency_f);
+        sweep_metadata.push_back(num_samples_remaining_f);
+    }
+
+    return sweep_metadata;
+}
+
+
+void batched_file_sink_impl::initialise_new_batch() 
+{
+    // Effectively reset the elapsed time for the current batch.
+    _sample_count = 0;
+    // Reset boolean flag indicating new batch will be created.
+    _create_new_batch = false;
+    // Update the batch metadata member variable with the current system time.
+    _batch_metadata = get_new_batch_metadata();
+
+    open_batch_file(_bin_file, _batch_metadata.bin_file_path);
+    open_batch_file(_hdr_file, _batch_metadata.hdr_file_path);
+    write_millisecond_component_to_detached_header();
+
+    if (_is_sweeping)
+    {
+        set_initial_active_tag();
+    }
+}
+
+
+int batched_file_sink_impl::work(int noutput_items,
+                                 gr_vector_const_void_star& input_items,
+                                 gr_vector_void_star& output_items)
+{   
+    if (_create_new_batch)
+    {
+        initialise_new_batch();
+    }
+    
+    // Write the input samples as contiguous raw bytes to the binary file.
+    const input_type* in = static_cast<const input_type*>(input_items[0]);
+    write_to_file(_bin_file, in, noutput_items);
+
+    // Update the elapsed time (inferred by sample counting).
+    _sample_count += noutput_items;
+
+    // If the elapsed time exceeds the batch size...
+    if (_sample_count >= _samples_per_batch)
+    {
+        // At the next call of the work function, create a new batch.
+        _create_new_batch = true;
+    }
+
+    if (_is_sweeping)
+    {
+        std::vector<float> sweep_metadata { get_num_samples_per_center_frequency(noutput_items) };
+        write_to_file(_hdr_file, sweep_metadata.data(), sweep_metadata.size());
+
+    }
+
     return noutput_items;
 }
+
 
 } /* namespace spectre */
 } /* namespace gr */
