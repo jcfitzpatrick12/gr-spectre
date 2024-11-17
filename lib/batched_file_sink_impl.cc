@@ -95,7 +95,6 @@ batch_time batched_file_sink_impl::get_batch_time()
     auto chrono_millisecond_component = duration_cast<milliseconds>(time_since_unix_epoch - seconds_since_unix_epoch);
     int64_t millisecond_component { chrono_millisecond_component.count() };
 
-    // Return the `batch_time` object with a copy of `std::tm`.
     return batch_time{utc_datetime, millisecond_component};
 }
 
