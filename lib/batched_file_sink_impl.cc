@@ -226,8 +226,8 @@ std::vector<float> batched_file_sink_impl::get_num_samples_per_center_frequency(
     // Get all frequency tags ranging from the current active tag (in absolute item time)
     // to the end of the current call to work (in absolute item time)
     std::vector<tag_t> tags;
-    int abs_start { _active_tag.offset + 1 };
-    int abs_end { nitems_read(_input_port) + noutput_items };
+    uint64_t abs_start { _active_tag.offset + 1 };
+    uint64_t abs_end { nitems_read(_input_port) + noutput_items };
     get_tags_in_range(tags, 
                       _input_port, 
                       abs_start, abs_end, 
@@ -236,15 +236,15 @@ std::vector<float> batched_file_sink_impl::get_num_samples_per_center_frequency(
     // Create a vector which will hold the number of samples per center frequency
     // That is, effectively, an ordered list of pairs (freq_i, num_samples_at_freq_i)
     // All numerical values are cast as floats for consistent reading back in SPECTRE.
-    int num_tags { tags.size() };
-    int num_elements = ( 2 * num_tags );
+    uint64_t num_tags { tags.size() };
+    uint64_t num_elements = ( 2 * num_tags );
     std::vector<float> sweep_metadata(num_elements, 0.0f);
 
-    for ( int n {0}; n < num_tags; n++)
+    for ( uint64_t n {0}; n < num_tags; n++)
     {
         tag_t next_tag { tags[n] };
         // Infer the number of samples at each center frequency through the tag offsets.
-        int num_samples { next_tag.offset - _active_tag.offset };
+        uint64_t num_samples { next_tag.offset - _active_tag.offset };
         float active_frequency_f { pmt::to_float(_active_tag.value) };
         float num_samples_f { static_cast<float>(num_samples) };
         // Copy the values into the array.
@@ -261,7 +261,7 @@ std::vector<float> batched_file_sink_impl::get_num_samples_per_center_frequency(
         // For a clean handover to the next file, we compute the number of samples remaining at the active tag in the current call of the work function.
         // In this way, we will have declared for every IQ sample dumped to the bin file, what frequency it was collected at.
 
-        int num_samples_remaining = abs_end - _active_tag.offset;
+        uint64_t num_samples_remaining = abs_end - _active_tag.offset;
         float active_frequency_f { pmt::to_float(_active_tag.value) };
         float num_samples_remaining_f = static_cast<float>(num_samples_remaining);
         sweep_metadata.push_back(active_frequency_f);

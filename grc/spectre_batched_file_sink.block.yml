@@ -4,24 +4,24 @@ category: '[spectre]'
 
 templates:
   imports: from gnuradio import spectre
-  make: spectre.batched_file_sink(${parent_dir}, ${tag}, ${chunk_size}, ${samp_rate}, ${sweeping}, ${frequency_tag_key}, ${initial_active_frequency})
+  make: spectre.batched_file_sink(${parent_dir_path}, ${tag}, ${batch_size}, ${samp_rate}, ${is_sweeping}, ${frequency_tag_key}, ${initial_center_frequency})
 
 parameters:
-  - id: parent_dir
-    label: Parent directory
+  - id: parent_dir_path
+    label: Parent directory path
     dtype: string
   - id: tag
     label: Tag
     dtype: string
-  - id: chunk_size
-    label: Chunk size [s]
+  - id: batch_size
+    label: Batch size [s]
     dtype: int
-    default: 60
+    default: 3
   - id: samp_rate
     label: Sample rate [samples/s]
     dtype: int
     default: 32000
-  - id: sweeping
+  - id: is_sweeping
     label: Sweeping [True / False]
     dtype: bool
     default: False
@@ -29,10 +29,12 @@ parameters:
     label: Frequency Tag Key
     dtype: string
     default: freq
-  - id: initial_active_frequency
-    label: Initial Active Frequency
+    hide: ${!is_sweeping}
+  - id: initial_center_frequency
+    label: Initial Center Frequency [Hz]
     dtype: float
     default: 0
+    hide: ${!is_sweeping}
 
 inputs:
   - label: in0
