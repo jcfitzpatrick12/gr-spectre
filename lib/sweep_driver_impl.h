@@ -13,29 +13,53 @@
 namespace gr {
 namespace spectre {
 
+const pmt::pmt_t OUTPUT_PORT { pmt::string_to_symbol("freq") };
+
 class sweep_driver_impl : public sweep_driver
 {
 private:
-    const float _min_freq; // User input. The lower bound for the frequency sweep. 
-    const float _max_freq; // User input. The upper bound for the frequency sweep. 
-    const float _freq_step; // User input. Step _freq_step [Hz] after collecting _samples_per_step samples.
-    const int _samp_rate; // User input. The (imposed) sample rate.
-    const int _samples_per_step; // User input. The number of samples per step.
-    std::string _receiver_port_name; // User input. Specifies the frequency port name of the receiving block.
-    const float _freq0; // The frequency at which we start the steps, based on min_freq.
-    int _sample_index_within_step; // 0-indexes the sample within the step.
-    float _current_freq; // Stores the current active frequency.
+    // User-configured member variables.
+    // The lower frequency bound for the frequency sweep [Hz].
+    const float _min_freq; 
+    // The upper frequency bound for the frequency sweep [Hz].
+    const float _max_freq;
+    // Increment the center frequency by _freq_step [Hz] after collecting _samples_per_step samples.
+    const float _freq_step;
+    // The physical sample rate of the input stream.
+    const int _samp_rate;
+    // The number of samples which are collected before the center frequency is incremented. 
+    const int _samples_per_step; 
+    // Specify the intended destination message port name.
+    pmt::pmt_t _receiver_port_name;
+    
+    // Internally managed member variables.
+    // The initial center frequency.
+    const float _initial_center_freq; 
+    // 1-index the sample within each step.
+    int _sample_count; 
+    // Store the current active center frequency.
+    float _current_freq;
 
 public:
+
+    // Constructor.
     sweep_driver_impl(float min_freq,
                       float max_freq,
                       float freq_step,
                       int samp_rate,
                       int samples_per_step,
                       std::string receiver_port_name);
+                    
+    // Destructor.
     ~sweep_driver_impl();
+
+    // Publish a message with the current active center frequency.
     void publish_current_freq();
-    float compute_freq0(); // Compute the initial frequency based on constructor inputs. 
+
+    // Compute the initial center freq required to satisfy the user-configured minimum frequency.
+    float compute_initial_center_freq();
+
+    // Where all the action really happens.
     int work(int noutput_items,
              gr_vector_const_void_star& input_items,
              gr_vector_void_star& output_items);
