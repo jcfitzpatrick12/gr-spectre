@@ -156,27 +156,27 @@ configure_package_config_file(
 ########################################################################
 
 # Define the source file for the standalone executable
-set(SANDBOX_MAIN ${CMAKE_SOURCE_DIR}/sandbox/main.cc)
+# set(SANDBOX_MAIN ${CMAKE_SOURCE_DIR}/sandbox/main.cc)
 
-# Define the source files for sandbox/src
-file(GLOB SANDBOX_SRC ${CMAKE_SOURCE_DIR}/sandbox/src/*.cc)
+# # Define the source files for sandbox/src
+# file(GLOB SANDBOX_SRC ${CMAKE_SOURCE_DIR}/sandbox/src/*.cc)
 
-# Define the executable target and add globbed source files
-add_executable(run_sandbox
-    ${CMAKE_SOURCE_DIR}/sandbox/main.cc
-    ${SANDBOX_SRC}
-)
+# # Define the executable target and add globbed source files
+# add_executable(run_sandbox
+#     ${CMAKE_SOURCE_DIR}/sandbox/main.cc
+#     ${SANDBOX_SRC}
+# )
 
-# Add include directories
-target_include_directories(run_sandbox PRIVATE
-    ${CMAKE_SOURCE_DIR}/sandbox/include
-    ${CMAKE_SOURCE_DIR}/include
-    ${GNURADIO_INCLUDE_DIRS}
-)
+# # Add include directories
+# target_include_directories(run_sandbox PRIVATE
+#     ${CMAKE_SOURCE_DIR}/sandbox/include
+#     ${CMAKE_SOURCE_DIR}/include
+#     ${GNURADIO_INCLUDE_DIRS}
+# )
 
-# Link the necessary GNU Radio libraries
-target_link_libraries(run_sandbox
-    gnuradio::gnuradio-runtime
-    gnuradio::gnuradio-pmt
-    gnuradio-spectre  # Link to the sandbox library for OOT block code
-)
+# # Link the necessary GNU Radio libraries
+# target_link_libraries(run_sandbox
+#     gnuradio::gnuradio-runtime
+#     gnuradio::gnuradio-pmt
+#     gnuradio-spectre  # Link to the sandbox library for OOT block code
+# )
