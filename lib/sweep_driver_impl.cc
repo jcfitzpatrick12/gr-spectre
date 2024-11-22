@@ -51,7 +51,7 @@ float sweep_driver_impl::compute_initial_freq() {
     // on performing an FFT with the defined sampling rate, 
     // the mimimum frequency configured by the user will
     // coincide with the lowest frequency in the spectrum.
-    return (_min_freq + _samp_rate / 2);
+    return (_min_freq + static_cast<float>(_samp_rate) / 2);
 }
 
 
