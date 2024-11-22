@@ -34,7 +34,7 @@ private:
     
     // Internally managed member variables.
     // The initial center frequency.
-    const float _initial_center_freq; 
+    const float _initial_freq; 
     // 1-index the sample within each step.
     int _sample_count; 
     // The current active center frequency.
@@ -57,7 +57,7 @@ public:
     void publish_current_freq();
 
     // Compute the initial center freq required to satisfy the user-configured minimum frequency.
-    float compute_initial_center_freq();
+    float compute_initial_freq();
 
     // Where all the action really happens.
     int work(int noutput_items,
