@@ -10,23 +10,23 @@ parameters:
   - id: min_freq
     label: Minimum frequency [Hz]
     dtype: float
-    default: 40000000
+    default: 80000000
   - id: max_freq
     label: Maximum frequency [Hz]
     dtype: float
-    default: 80000000
+    default: 120000000
   - id: freq_step
     label: Frequency step [Hz]
     dtype: float
-    default: 4000000
+    default: 6000000
   - id: samp_rate
     label: Sample rate [samples/s]
     dtype: int
-    default: 4000000
+    default: 6000000
   - id: samples_per_step
     label: Samples per step
     dtype: int
-    default: 4000000
+    default: 350000
   - id: receiver_port_name
     label: Receiver Port Name 
     dtype: string
