@@ -29,7 +29,7 @@ private:
     const int _samp_rate;
     // The number of samples which are collected before the center frequency is incremented. 
     const int _samples_per_step; 
-    // Specify the intended destination message port name.
+    // Specify the intended destination message port name. < DOES THIS HAVE ANY EFFECT? >
     pmt::pmt_t _receiver_port_name;
     
     // Internally managed member variables.
@@ -37,7 +37,7 @@ private:
     const float _initial_center_freq; 
     // 1-index the sample within each step.
     int _sample_count; 
-    // Store the current active center frequency.
+    // The current active center frequency.
     float _current_freq;
 
 public:

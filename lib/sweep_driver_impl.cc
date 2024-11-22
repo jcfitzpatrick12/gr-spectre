@@ -14,10 +14,6 @@ namespace spectre {
 
 using input_type = gr_complex;
 
-// Key things to work out... try and decipher the message passing API.
-// Why is the msg object I am publishing a pair? Is they key simply ignored
-// by the receiving block?
-
 sweep_driver::sptr sweep_driver::make(
     float min_freq, float max_freq, float freq_step, int samp_rate, int samples_per_step, std::string receiver_port_name)
 {
@@ -36,7 +32,7 @@ sweep_driver_impl::sweep_driver_impl(
     _samp_rate(samp_rate),
     _samples_per_step(samples_per_step),
     _receiver_port_name(pmt::string_to_symbol(receiver_port_name)),
-    _initial_center_freq( compute_initial_center_freq() ),
+    _initial_center_freq(compute_initial_center_freq()),
     _sample_count(0),
     _current_freq(_initial_center_freq)
 {   
@@ -55,12 +51,12 @@ float sweep_driver_impl::compute_initial_center_freq() {
 }
 
 void sweep_driver_impl::publish_current_freq() {
-    // Does the key have any effect at all?
-    // Or is the destination port decided by flowgraph connections.
     pmt::pmt_t key = _receiver_port_name;
     pmt::pmt_t value = pmt::from_float(_current_freq);
     // cons - "construct a pair"
     pmt::pmt_t msg = pmt::cons(key, value);
+    // std::cout << "Publishing now: " 
+    //           << pmt::to_float(pmt::cdr(msg)) << " [Hz]" <<"\n";
     message_port_pub(OUTPUT_PORT, msg);
 }
 
@@ -72,13 +68,14 @@ int sweep_driver_impl::work(int noutput_items,
     for (int i = 0; i < noutput_items; i++) {
         // Increment the sample count.
         _sample_count++;
-        
-        // Check if we have exceeded the range of the step.
-        if (_sample_count > _samples_per_step) {
+
+        // Check if we have reached the final sample in the step.
+        if (_sample_count == _samples_per_step) {
+
             // If so, reset the sample count.
             _sample_count = 0;
 
-            // Increment the output frequency of sweep driver
+            // Increment the output frequency of sweep driver.
             _current_freq += _freq_step;
 
             // If the incremented frequency is larger than the maximum frequency
@@ -89,7 +86,7 @@ int sweep_driver_impl::work(int noutput_items,
                 _current_freq = _initial_center_freq;
             }
 
-            // Publish the frequency of the current step
+            // Publish the new active center frequency (after incrementing).
             publish_current_freq();
         }
     }
