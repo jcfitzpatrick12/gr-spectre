@@ -46,7 +46,8 @@ sweep_driver_impl::sweep_driver_impl(
 sweep_driver_impl::~sweep_driver_impl() {}
 
 
-float sweep_driver_impl::compute_initial_freq() {
+float sweep_driver_impl::compute_initial_freq() 
+{
     // Compute the initial center frequency such that
     // on performing an FFT with the defined sampling rate, 
     // the mimimum frequency configured by the user will
@@ -55,7 +56,8 @@ float sweep_driver_impl::compute_initial_freq() {
 }
 
 
-void sweep_driver_impl::publish_current_freq() {
+void sweep_driver_impl::publish_current_freq() 
+{
     pmt::pmt_t key = _receiver_port_name;
     pmt::pmt_t value = pmt::from_float(_current_freq);
     // cons - "construct a pair"
