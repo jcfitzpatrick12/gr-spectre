@@ -11,7 +11,10 @@
 namespace gr {
 namespace spectre {
 
+
 using input_type = gr_complex;
+
+
 batched_file_sink::sptr batched_file_sink::make(const std::string parent_dir_path,
                                                 const std::string tag,
                                                 const float batch_size,
@@ -30,7 +33,6 @@ batched_file_sink::sptr batched_file_sink::make(const std::string parent_dir_pat
 }
 
 
-// Private constructor.
 batched_file_sink_impl::batched_file_sink_impl(const std::string parent_dir_path,
                                                const std::string tag,
                                                const float batch_size,
@@ -58,7 +60,6 @@ batched_file_sink_impl::batched_file_sink_impl(const std::string parent_dir_path
 }
 
 
-// Virtual destructor.
 batched_file_sink_impl::~batched_file_sink_impl() 
 {
     _bin_file.close();
@@ -219,6 +220,7 @@ void batched_file_sink_impl::set_initial_active_tag()
         "Verify input tags or set an initial center frequency."
     );
 }
+
 
 std::vector<float> batched_file_sink_impl::get_num_samples_per_center_frequency(int noutput_items)
 {
