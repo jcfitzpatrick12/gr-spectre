@@ -74,12 +74,14 @@ int sweep_driver_impl::work(int noutput_items,
                             gr_vector_void_star& output_items)
 {
 
-    for (int i = 0; i < noutput_items; i++) {
+    for (int i = 0; i < noutput_items; i++)
+    {
         // Increment the sample count.
         _sample_count++;
 
         // Check if we have reached the final sample in the step.
-        if (_sample_count == _samples_per_step) {
+        if (_sample_count == _samples_per_step) 
+        {
 
             // If so, reset the sample count.
             _sample_count = 0;
@@ -91,7 +93,8 @@ int sweep_driver_impl::work(int noutput_items,
             // imposed by the user, then reset it to the initial state.
             // In this way, we never publish a center frequency ABOVE
             // the user-configured maximum center frequency.
-            if (_current_freq > _max_freq) {
+            if (_current_freq > _max_freq) 
+            {
                 _current_freq = _initial_freq;
             }
 
