@@ -32,11 +32,11 @@ public:
      * class. spectre::sweep_driver::make is the public interface for
      * creating new instances.
      */
-    static sptr make(float min_freq = 40000000,
-                     float max_freq = 80000000,
-                     float freq_step = 8000000,
-                     int samp_rate = 8000000,
-                     int samples_per_step = 300000,
+    static sptr make(float min_freq = 80000000,
+                     float max_freq = 120000000,
+                     float freq_step = 6000000,
+                     int samp_rate = 6000000,
+                     int samples_per_step = 350000,
                      std::string receiver_port_name = "freq");
 };
 

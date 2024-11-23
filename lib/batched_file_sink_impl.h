@@ -29,6 +29,7 @@ struct batch_time
     int64_t millisecond_component;
 };
 
+
 // Container which holds the file and time metadata for the batch files.
 struct batch_metadata
 {   

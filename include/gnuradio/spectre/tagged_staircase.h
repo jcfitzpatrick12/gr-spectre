@@ -34,6 +34,7 @@ public:
      */
     static sptr make(int min_samples_per_step = 4000,
                      int max_samples_per_step = 5000,
+                     float freq_step = 32000,
                      int step_increment = 200,
                      int samp_rate = 32000);
 };
