@@ -92,7 +92,7 @@ int tagged_staircase_impl::work(int noutput_items,
     {
         // Tag the very first sample in the stream.
         tag_step(0);
-        // Increment the step counter (to indicate are starting the first step)
+        // Increment the step counter (to indicate we are starting the first step)
         _step_count++;
     }
 
@@ -109,16 +109,12 @@ int tagged_staircase_impl::work(int noutput_items,
         {
             // Reset the sample count.
             _sample_count = 0;
-            
             // Increment the step counter
             _step_count++;
-
             // Increment the number of samples per step.
             _current_samples_per_step += _step_increment;
-
             // Increment the modelled center frequency.
             _current_freq += _samp_rate;
-
             // Reset if we exceed the maximum step size
             if (_current_samples_per_step > _max_samples_per_step) 
             {
@@ -130,7 +126,7 @@ int tagged_staircase_impl::work(int noutput_items,
                 _current_freq = _initial_freq;
             }
 
-            // Tag the first sample of the new step
+            // Tag the first sample of the new step.
             tag_step(i + 1);
 
         }

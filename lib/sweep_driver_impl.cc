@@ -82,10 +82,8 @@ int sweep_driver_impl::work(int noutput_items,
         // Check if we have reached the final sample in the step.
         if (_sample_count == _samples_per_step) 
         {
-
             // If so, reset the sample count.
             _sample_count = 0;
-
             // Increment the output frequency of sweep driver.
             _current_freq += _freq_step;
 
