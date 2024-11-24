@@ -114,7 +114,7 @@ int tagged_staircase_impl::work(int noutput_items,
             // Increment the number of samples per step.
             _current_samples_per_step += _step_increment;
             // Increment the modelled center frequency.
-            _current_freq += _samp_rate;
+            _current_freq += _freq_step;
             // Reset if we exceed the maximum step size
             if (_current_samples_per_step > _max_samples_per_step) 
             {
