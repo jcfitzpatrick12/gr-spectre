@@ -35,9 +35,8 @@ sweep_driver_impl::sweep_driver_impl(
     _samp_rate(samp_rate),
     _samples_per_step(samples_per_step),
     _receiver_port_name(pmt::string_to_symbol(receiver_port_name)),
-    _initial_freq(compute_initial_freq()),
     _sample_count(0),
-    _current_freq(_initial_freq)
+    _current_freq(_min_freq)
 {   
     // Declare the message port in the constructor (https://wiki.gnuradio.org/index.php/Message_Passing)
     message_port_register_out( OUTPUT_PORT );
@@ -45,16 +44,6 @@ sweep_driver_impl::sweep_driver_impl(
 
 
 sweep_driver_impl::~sweep_driver_impl() {}
-
-
-float sweep_driver_impl::compute_initial_freq() 
-{
-    // Compute the initial center frequency such that
-    // on performing an FFT with the defined sampling rate, 
-    // the mimimum frequency configured by the user will
-    // coincide with the lowest frequency in the spectrum.
-    return (_min_freq + static_cast<float>(_samp_rate) / 2);
-}
 
 
 void sweep_driver_impl::publish_current_freq() 
@@ -93,7 +82,7 @@ int sweep_driver_impl::work(int noutput_items,
             // the user-configured maximum center frequency.
             if (_current_freq > _max_freq) 
             {
-                _current_freq = _initial_freq;
+                _current_freq = _min_freq;
             }
 
             // Publish the new active center frequency (after incrementing).
