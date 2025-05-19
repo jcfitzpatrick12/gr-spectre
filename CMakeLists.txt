@@ -148,9 +148,3 @@ configure_package_config_file(
     ${CMAKE_CURRENT_BINARY_DIR}/cmake/Modules/${target}Config.cmake
     INSTALL_DESTINATION ${GR_CMAKE_DIR}
 )
-
-
-
-########################################################################
-# Add a standalone executable for sandbox testing
-########################################################################
