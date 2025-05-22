@@ -65,7 +65,7 @@ if(NOT CMAKE_MODULES_DIR)
   set(CMAKE_MODULES_DIR lib${LIB_SUFFIX}/cmake)
 endif(NOT CMAKE_MODULES_DIR)
 
-set(GR_INCLUDE_DIR      include/gnuradio/spectre)
+set(GR_INCLUDE_DIR      include/spectre)
 set(GR_CMAKE_DIR        ${CMAKE_MODULES_DIR}/gnuradio-spectre)
 set(GR_PKG_DATA_DIR     ${GR_DATA_DIR}/${CMAKE_PROJECT_NAME})
 set(GR_PKG_DOC_DIR      ${GR_DOC_DIR}/${CMAKE_PROJECT_NAME})
@@ -121,7 +121,7 @@ add_custom_target(uninstall
 ########################################################################
 # Add subdirectories
 ########################################################################
-add_subdirectory(include/gnuradio/spectre)
+add_subdirectory(include/spectre)
 add_subdirectory(lib)
 add_subdirectory(apps)
 add_subdirectory(docs)
@@ -148,3 +148,15 @@ configure_package_config_file(
     ${CMAKE_CURRENT_BINARY_DIR}/cmake/Modules/${target}Config.cmake
     INSTALL_DESTINATION ${GR_CMAKE_DIR}
 )
+
+########################################################################
+# Optionally, create a sandbox area for playing around
+########################################################################
+option(ENABLE_SANDBOX "Build the sandbox executable" OFF)
+
+if(ENABLE_SANDBOX)
+    message(STATUS "Sandbox is enabled. Building sandbox executable.")
+    add_executable(gr_spectre_sandbox sandbox/main.cc)
+    target_link_libraries(gr_spectre_sandbox PRIVATE gnuradio-runtime gnuradio::gnuradio-pmt)
+    install(TARGETS gr_spectre_sandbox RUNTIME DESTINATION bin)
+endif()
