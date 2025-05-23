@@ -148,18 +148,3 @@ configure_package_config_file(
     ${CMAKE_CURRENT_BINARY_DIR}/cmake/Modules/${target}Config.cmake
     INSTALL_DESTINATION ${GR_CMAKE_DIR}
 )
-
-########################################################################
-# Optionally, create a sandbox area for playing around
-########################################################################
-option(ENABLE_SANDBOX "Build the sandbox executable" OFF)
-
-if(ENABLE_SANDBOX)
-    message(STATUS "Sandbox is enabled. Building sandbox executable.")
-    add_executable(gr_spectre_sandbox sandbox/main.cc)
-    target_link_libraries(gr_spectre_sandbox PRIVATE 
-                          gnuradio-runtime 
-                          gnuradio::gnuradio-pmt 
-                          gnuradio-spectre)
-    install(TARGETS gr_spectre_sandbox RUNTIME DESTINATION bin)
-endif()
