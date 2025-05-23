@@ -1,9 +1,9 @@
-# gr-spectre: The primary GNU Radio OOT module for SPECTRE
+# gr-spectre: The primary GNU Radio OOT module for Spectre
 
 ## Overview
 This OOT module contains custom GNU Radio blocks used in the [`spectre`](https://github.com/jcfitzpatrick12/spectre) repository. 
 
-📢 **This project is under active development. Detailed documentation will be provided in the future.**  📢 
+📢 **This project is under active development.**  📢 
 
 ## Blocks
 
