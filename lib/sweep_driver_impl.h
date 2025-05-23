@@ -14,7 +14,7 @@ namespace gr {
 namespace spectre {
 
 
-const pmt::pmt_t OUTPUT_PORT { pmt::string_to_symbol("freq") };
+const pmt::pmt_t OUTPUT_PORT { pmt::string_to_symbol("retune_command") };
 
 
 class sweep_driver_impl : public sweep_driver
@@ -31,8 +31,8 @@ private:
     const int _samp_rate;
     // The number of samples which are collected before the center frequency is incremented. 
     const int _samples_per_step; 
-    // Specify the intended destination message port name. < DOES THIS HAVE ANY EFFECT? >
-    pmt::pmt_t _receiver_port_name;
+    // The name of the command to retune the center frequency.
+    pmt::pmt_t _retune_cmd_name;
     
     // Internally managed member variables.
     // 1-index the sample within each step.
@@ -48,13 +48,13 @@ public:
                       float freq_step,
                       int samp_rate,
                       int samples_per_step,
-                      std::string receiver_port_name);
+                      std::string retune_cmd_name);
                     
     // Destructor.
     ~sweep_driver_impl();
 
     // Publish a message with the current active center frequency.
-    void publish_current_freq();
+    void publish_retune_command();
 
     // Where all the action really happens.
     int work(int noutput_items,

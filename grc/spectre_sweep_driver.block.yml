@@ -4,7 +4,7 @@ category: '[spectre]'
 
 templates:
   imports: from gnuradio import spectre
-  make: spectre.sweep_driver(${min_freq}, ${max_freq}, ${freq_step}, ${samp_rate}, ${samples_per_step}, ${receiver_port_name})
+  make: spectre.sweep_driver(${min_freq}, ${max_freq}, ${freq_step}, ${samp_rate}, ${samples_per_step}, ${retune_cmd_name})
 
 parameters:
   - id: min_freq
@@ -27,7 +27,7 @@ parameters:
     label: Samples per step
     dtype: int
     default: 350000
-  - id: receiver_port_name
+  - id: retune_cmd_name
     label: Receiver Port Name 
     dtype: string
     default: "freq"
