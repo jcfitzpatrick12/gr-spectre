@@ -23,7 +23,7 @@
 
 namespace py = pybind11;
 
-#include <spectre/sweep_driver.h>
+#include <gnuradio/spectre/sweep_driver.h>
 // pydoc.h is automatically generated in the build directory
 #include <sweep_driver_pydoc.h>
 

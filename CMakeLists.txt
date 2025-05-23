@@ -65,7 +65,7 @@ if(NOT CMAKE_MODULES_DIR)
   set(CMAKE_MODULES_DIR lib${LIB_SUFFIX}/cmake)
 endif(NOT CMAKE_MODULES_DIR)
 
-set(GR_INCLUDE_DIR      include/spectre)
+set(GR_INCLUDE_DIR      include/gnuradio/spectre)
 set(GR_CMAKE_DIR        ${CMAKE_MODULES_DIR}/gnuradio-spectre)
 set(GR_PKG_DATA_DIR     ${GR_DATA_DIR}/${CMAKE_PROJECT_NAME})
 set(GR_PKG_DOC_DIR      ${GR_DOC_DIR}/${CMAKE_PROJECT_NAME})
@@ -121,7 +121,7 @@ add_custom_target(uninstall
 ########################################################################
 # Add subdirectories
 ########################################################################
-add_subdirectory(include/spectre)
+add_subdirectory(include/gnuradio/spectre)
 add_subdirectory(lib)
 add_subdirectory(apps)
 add_subdirectory(docs)
