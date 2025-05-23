@@ -65,7 +65,7 @@ if(NOT CMAKE_MODULES_DIR)
   set(CMAKE_MODULES_DIR lib${LIB_SUFFIX}/cmake)
 endif(NOT CMAKE_MODULES_DIR)
 
-set(GR_INCLUDE_DIR      include/gnuradio/spectre)
+set(GR_INCLUDE_DIR      include/spectre)
 set(GR_CMAKE_DIR        ${CMAKE_MODULES_DIR}/gnuradio-spectre)
 set(GR_PKG_DATA_DIR     ${GR_DATA_DIR}/${CMAKE_PROJECT_NAME})
 set(GR_PKG_DOC_DIR      ${GR_DOC_DIR}/${CMAKE_PROJECT_NAME})
@@ -121,7 +121,7 @@ add_custom_target(uninstall
 ########################################################################
 # Add subdirectories
 ########################################################################
-add_subdirectory(include/gnuradio/spectre)
+add_subdirectory(include/spectre)
 add_subdirectory(lib)
 add_subdirectory(apps)
 add_subdirectory(docs)
@@ -149,34 +149,17 @@ configure_package_config_file(
     INSTALL_DESTINATION ${GR_CMAKE_DIR}
 )
 
-
-
 ########################################################################
-# Add a standalone executable for sandbox testing
+# Optionally, create a sandbox area for playing around
 ########################################################################
+option(ENABLE_SANDBOX "Build the sandbox executable" OFF)
 
-# Define the source file for the standalone executable
-# set(SANDBOX_MAIN ${CMAKE_SOURCE_DIR}/sandbox/main.cc)
-
-# # Define the source files for sandbox/src
-# file(GLOB SANDBOX_SRC ${CMAKE_SOURCE_DIR}/sandbox/src/*.cc)
-
-# # Define the executable target and add globbed source files
-# add_executable(run_sandbox
-#     ${CMAKE_SOURCE_DIR}/sandbox/main.cc
-#     ${SANDBOX_SRC}
-# )
-
-# # Add include directories
-# target_include_directories(run_sandbox PRIVATE
-#     ${CMAKE_SOURCE_DIR}/sandbox/include
-#     ${CMAKE_SOURCE_DIR}/include
-#     ${GNURADIO_INCLUDE_DIRS}
-# )
-
-# # Link the necessary GNU Radio libraries
-# target_link_libraries(run_sandbox
-#     gnuradio::gnuradio-runtime
-#     gnuradio::gnuradio-pmt
-#     gnuradio-spectre  # Link to the sandbox library for OOT block code
-# )
+if(ENABLE_SANDBOX)
+    message(STATUS "Sandbox is enabled. Building sandbox executable.")
+    add_executable(gr_spectre_sandbox sandbox/main.cc)
+    target_link_libraries(gr_spectre_sandbox PRIVATE 
+                          gnuradio-runtime 
+                          gnuradio::gnuradio-pmt 
+                          gnuradio-spectre)
+    install(TARGETS gr_spectre_sandbox RUNTIME DESTINATION bin)
+endif()

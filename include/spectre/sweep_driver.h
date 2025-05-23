@@ -37,7 +37,7 @@ public:
                      float freq_step = 6000000,
                      int samp_rate = 6000000,
                      int samples_per_step = 350000,
-                     std::string receiver_port_name = "freq");
+                     std::string retune_cmd_name = "freq");
 };
 
 } // namespace spectre

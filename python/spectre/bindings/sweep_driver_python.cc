@@ -1,5 +1,5 @@
 /*
- * Copyright 2024 Free Software Foundation, Inc.
+ * Copyright 2025 Free Software Foundation, Inc.
  *
  * This file is part of GNU Radio
  *
@@ -14,7 +14,7 @@
 /* BINDTOOL_GEN_AUTOMATIC(0)                                                       */
 /* BINDTOOL_USE_PYGCCXML(0)                                                        */
 /* BINDTOOL_HEADER_FILE(sweep_driver.h)                                        */
-/* BINDTOOL_HEADER_FILE_HASH(7638f3894175cfcad56f9f58704ed8f5)                     */
+/* BINDTOOL_HEADER_FILE_HASH(f8deac244aefb0f65690db71d9619b6c)                     */
 /***********************************************************************************/
 
 #include <pybind11/complex.h>
@@ -23,7 +23,7 @@
 
 namespace py = pybind11;
 
-#include <gnuradio/spectre/sweep_driver.h>
+#include <spectre/sweep_driver.h>
 // pydoc.h is automatically generated in the build directory
 #include <sweep_driver_pydoc.h>
 
@@ -42,7 +42,7 @@ void bind_sweep_driver(py::module& m)
            py::arg("freq_step") = 6000000,
            py::arg("samp_rate") = 6000000,
            py::arg("samples_per_step") = 350000,
-           py::arg("receiver_port_name") = "freq",
+           py::arg("retune_cmd_name") = "freq",
            D(sweep_driver,make)
         )
         
