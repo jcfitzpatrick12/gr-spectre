@@ -28,7 +28,7 @@ parameters:
     dtype: int
     default: 350000
   - id: retune_cmd_name
-    label: Receiver Port Name 
+    label: Retune command name
     dtype: string
     default: "freq"
   - id: showports
