@@ -14,7 +14,7 @@ rm -f /usr/local/lib/libgnuradio-xxx.so*
 # build and install
 mkdir build
 cd build
-cmake -DENABLE_SANDBOX=ON ..
+cmake ..
 make -j$(nproc)
 make install
 ldconfig
