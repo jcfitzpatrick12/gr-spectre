@@ -9,10 +9,6 @@
 
 - [ ] My commit history follows the [conventional commits specification](https://www.conventionalcommits.org/en/v1.0.0/)
 - [ ] Each commit represents a single, coherent unit of work
-- [ ] My changes are covered by unit tests
-- [ ] Unit tests successfully run locally
-- [ ] I have formatted Python code with `black`
-- [ ] I have checked static type hinting with `mypy`
 - [ ] I have added/updated necessary documentation, if required
 - [ ] I have checked for and resolved any merge conflicts
 - [ ] I have performed a self-review of my code
