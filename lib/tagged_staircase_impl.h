@@ -13,7 +13,7 @@
 namespace gr {
 namespace spectre {
 
-const pmt::pmt_t TAG_KEY { pmt::string_to_symbol("rx_freq") };
+const pmt::pmt_t TAG_KEY{ pmt::string_to_symbol("rx_freq") };
 
 class tagged_staircase_impl : public tagged_staircase
 {
@@ -26,9 +26,9 @@ private:
     // Increment the modelled center frequency by _freq_step [Hz] every new step.
     const float _freq_step;
     // Incremement the length of each step by this many samples each new step.
-    const int _step_increment; 
+    const int _step_increment;
     // The artificially assigned sample rate.
-    const int _samp_rate; 
+    const int _samp_rate;
 
     // Internally managed member variables.
     // 1-index the sample within each step.
@@ -40,7 +40,7 @@ private:
     // The artificially assigned initial center frequency.
     float _initial_freq;
     // The current active center frequency.
-    float _current_freq; 
+    float _current_freq;
 
 public:
     // Constructor.
@@ -53,10 +53,12 @@ public:
     // Destructor.
     ~tagged_staircase_impl();
 
-     // Tag a sample in the output buffer, with index relative to the current call of the work function.
+    // Tag a sample in the output buffer, with index relative to the current call of the
+    // work function.
     void tag_step(int rel_sample_index);
 
-    // Compute the initial center frequency which is artificially assigned to the first step.
+    // Compute the initial center frequency which is artificially assigned to the first
+    // step.
     float compute_initial_freq();
 
     // Where all the action really happens.

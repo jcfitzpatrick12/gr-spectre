@@ -14,15 +14,12 @@
 
 namespace fs = std::filesystem;
 
-namespace gr 
-{
-namespace spectre 
-{
+namespace gr {
+namespace spectre {
 
 
 // Struct used to pin down exact (defined) start time for the current batch.
-struct batch_time
-{
+struct batch_time {
     // tm struct datetime to seconds precision.
     std::tm* utc_datetime;
     // Millisecond component.
@@ -31,8 +28,7 @@ struct batch_time
 
 
 // Container which holds the file and time metadata for the batch files.
-struct batch_metadata
-{   
+struct batch_metadata {
     batch_time time;
     fs::path bin_file_path;
     fs::path hdr_file_path;
@@ -40,19 +36,14 @@ struct batch_metadata
 
 
 // Classify the different batch file types.
-enum class batch_file_type {
-    BIN,
-    HDR
-};
+enum class batch_file_type { BIN, HDR };
 
 
 template <typename T>
-void write_to_file(std::ofstream& file, 
-                   const T* data_ptr, 
-                   size_t num_elements)
+void write_to_file(std::ofstream& file, const T* data_ptr, size_t num_elements)
 {
     const char* bytes = reinterpret_cast<const char*>(data_ptr);
-    size_t num_bytes { num_elements * sizeof(T) };
+    size_t num_bytes{ num_elements * sizeof(T) };
     file.write(bytes, num_bytes);
 }
 
@@ -65,16 +56,18 @@ private:
     const fs::path _parent_dir_path;
     // Identifier embedded in the output file names.
     const std::string _tag;
-    // The sampling interval (inferred from the input sampling rate). 
+    // The sampling interval (inferred from the input sampling rate).
     // I.e. the time which elapses between samples.
     const float _sampling_interval;
-    // Output files are batched, each holding a specified number of seconds' worth of samples.
+    // Output files are batched, each holding a specified number of seconds' worth of
+    // samples.
     const float _samples_per_batch;
     // Boolean indicates whether input stream is frequency tagged.
     const bool _is_sweeping;
     // The key of the frequency tags
     const pmt::pmt_t _frequency_tag_key;
-    // The initial frequency of the incoming samples. Ignored if the first sample has a frequency tag.
+    // The initial frequency of the incoming samples. Ignored if the first sample has a
+    // frequency tag.
     const float _initial_center_frequency;
 
     // Internally managed member variables
@@ -84,13 +77,13 @@ private:
     std::ofstream _hdr_file;
     // Used to infer the elapsed time at each call of the work function.
     float _sample_count;
-    // Boolean indicates whether new output file streams will be created 
+    // Boolean indicates whether new output file streams will be created
     // at the next call of the work function.
     bool _create_new_batch;
     // Used to record the center frequency of each sample in the input stream.
     tag_t _active_tag;
     // Default instance of a tag. Used to compare whether a tag has been set or not.
-    const tag_t _default_tag; 
+    const tag_t _default_tag;
     // This block has only one input port.
     const int _input_port;
 
@@ -101,14 +94,13 @@ private:
 
     batch_metadata get_new_batch_metadata() const;
 
-    fs::path get_absolute_batch_file_path(std::tm* utc_datetime, 
+    fs::path get_absolute_batch_file_path(std::tm* utc_datetime,
                                           batch_file_type file_type) const;
 
 
     void write_millisecond_component_to_detached_header();
 
-    void open_batch_file(std::ofstream& file, 
-                         fs::path file_path);
+    void open_batch_file(std::ofstream& file, fs::path file_path);
 
 
     // Sets the active tag when a new batch is created
@@ -119,10 +111,10 @@ private:
     std::optional<tag_t> get_tag_from_first_sample();
 
     // Get the number of samples per center frequency via frequency tag offsets.
-    // Consider two neighbouring frequency tags, tag_i and tag_j, with offsets i and j (i < j) 
-    // All samples z_k, with k in [i, j), correspond to the frequency tag_i.value
+    // Consider two neighbouring frequency tags, tag_i and tag_j, with offsets i and j (i
+    // < j) All samples z_k, with k in [i, j), correspond to the frequency tag_i.value
     std::vector<float> get_num_samples_per_center_frequency(int noutput_items);
-   
+
     void initialise_new_batch();
 
 

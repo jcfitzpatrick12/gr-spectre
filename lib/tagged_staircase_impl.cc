@@ -54,20 +54,20 @@ tagged_staircase_impl::tagged_staircase_impl(int min_samples_per_step,
 tagged_staircase_impl::~tagged_staircase_impl() {}
 
 
-float tagged_staircase_impl::compute_initial_freq() 
+float tagged_staircase_impl::compute_initial_freq()
 {
     // Compute the initial center frequency such that
-    // on performing an FFT with the defined sampling rate, 
+    // on performing an FFT with the defined sampling rate,
     // the edge of the spectrum will be at 0Hz.
     return (static_cast<float>(_samp_rate) / 2);
 }
 
 
-void tagged_staircase_impl::tag_step(int rel_sample_index) 
+void tagged_staircase_impl::tag_step(int rel_sample_index)
 {
     // nitems_written is w.r.t. the state at the start of the call to work.
     // So, to tag the appropriate sample in the output buffer, we append
-    // the relative sample index, to the number of items written as of 
+    // the relative sample index, to the number of items written as of
     // the start of the call to the work function.
     const uint64_t absolute_offset = nitems_written(0) + rel_sample_index;
     const pmt::pmt_t value = pmt::from_float(_current_freq);
@@ -79,7 +79,7 @@ void tagged_staircase_impl::tag_step(int rel_sample_index)
 int tagged_staircase_impl::work(int noutput_items,
                                 gr_vector_const_void_star& input_items,
                                 gr_vector_void_star& output_items)
-{   
+{
     // Type cast the pointer to the output buffer.
     output_type* optr = static_cast<output_type*>(output_items[0]);
 
@@ -88,16 +88,14 @@ int tagged_staircase_impl::work(int noutput_items,
     // This will only be true only at the first call of the work function.
     // (since only at the first call, will no samples have been written
     // to the output buffer).
-    if (nitems_written(0) == 0)
-    {
+    if (nitems_written(0) == 0) {
         // Tag the very first sample in the stream.
         tag_step(0);
         // Increment the step counter (to indicate we are starting the first step)
         _step_count++;
     }
 
-    for (int i = 0; i < noutput_items; i++) 
-    {
+    for (int i = 0; i < noutput_items; i++) {
         // Increment the sample count
         _sample_count++;
 
@@ -105,8 +103,7 @@ int tagged_staircase_impl::work(int noutput_items,
         optr[i] = output_type(static_cast<float>(_step_count), 0.0f);
 
         // Check if the current step is complete
-        if (_sample_count == _current_samples_per_step) 
-        {
+        if (_sample_count == _current_samples_per_step) {
             // Reset the sample count.
             _sample_count = 0;
             // Increment the step counter
@@ -116,8 +113,7 @@ int tagged_staircase_impl::work(int noutput_items,
             // Increment the modelled center frequency.
             _current_freq += _freq_step;
             // Reset if we exceed the maximum step size
-            if (_current_samples_per_step > _max_samples_per_step) 
-            {
+            if (_current_samples_per_step > _max_samples_per_step) {
                 // Reset the number of samples per step.
                 _current_samples_per_step = _min_samples_per_step;
                 // Reset the step count (back to step number one)
@@ -128,7 +124,6 @@ int tagged_staircase_impl::work(int noutput_items,
 
             // Tag the first sample of the new step.
             tag_step(i + 1);
-
         }
     }
 

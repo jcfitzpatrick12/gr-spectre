@@ -14,7 +14,7 @@ namespace gr {
 namespace spectre {
 
 
-const pmt::pmt_t OUTPUT_PORT { pmt::string_to_symbol("retune_command") };
+const pmt::pmt_t OUTPUT_PORT{ pmt::string_to_symbol("retune_command") };
 
 
 class sweep_driver_impl : public sweep_driver
@@ -22,26 +22,27 @@ class sweep_driver_impl : public sweep_driver
 private:
     // User-configured member variables.
     // The lower frequency bound for the frequency sweep [Hz].
-    const float _min_freq; 
+    const float _min_freq;
     // The upper frequency bound for the frequency sweep [Hz].
     const float _max_freq;
-    // Increment the center frequency by _freq_step [Hz] after collecting _samples_per_step samples.
+    // Increment the center frequency by _freq_step [Hz] after collecting
+    // _samples_per_step samples.
     const float _freq_step;
     // The physical sample rate of the input stream.
     const int _samp_rate;
-    // The number of samples which are collected before the center frequency is incremented. 
-    const int _samples_per_step; 
+    // The number of samples which are collected before the center frequency is
+    // incremented.
+    const int _samples_per_step;
     // The name of the command to retune the center frequency.
     pmt::pmt_t _retune_cmd_name;
-    
+
     // Internally managed member variables.
     // 1-index the sample within each step.
-    int _sample_count; 
+    int _sample_count;
     // The current active center frequency.
     float _current_freq;
 
 public:
-
     // Constructor.
     sweep_driver_impl(float min_freq,
                       float max_freq,
@@ -49,7 +50,7 @@ public:
                       int samp_rate,
                       int samples_per_step,
                       std::string retune_cmd_name);
-                    
+
     // Destructor.
     ~sweep_driver_impl();
 
