@@ -27,19 +27,14 @@ set(VERSION_PATCH 0)
 
 cmake_policy(SET CMP0011 NEW)
 
-# Enable generation of compile_commands.json for code completion engines
-set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
-
 ########################################################################
 # Minimum Version Requirements
 ########################################################################
-
 include(GrMinReq)
 
 ########################################################################
 # Compiler settings
 ########################################################################
-
 include(GrCompilerSettings)
 
 ########################################################################
@@ -63,7 +58,7 @@ set(GR_PKG_LIBEXEC_DIR  ${GR_LIBEXEC_DIR}/${CMAKE_PROJECT_NAME})
 ########################################################################
 # Disable doxygen
 ########################################################################
-option(ENABLE_DOXYGEN "Build docs using Doxygen" OFF)
+set(ENABLE_DOXYGEN OFF)
 
 ########################################################################
 # Create uninstall target
