@@ -1,317 +1,235 @@
-/* -*- c++ -*- */
 /*
+ * Copyright 2024-2026 Jimmy Fitzpatrick.
+ * This file is part of SPECTRE
  * SPDX-License-Identifier: GPL-3.0-or-later
  */
 
 #include "batched_file_sink_impl.h"
-#include <gnuradio/io_signature.h>
+
+#include <algorithm>
+#include <chrono>
 #include <filesystem>
-#include <fstream>
+#include <iomanip>
+#include <iostream>
+
+namespace {
+
+static constexpr int NUM_DIGITS_MILLISECONDS = 3;
+
+int get_sizeof_stream_item(const std::string& input_type)
+{
+    // Get the size of each item in the input stream, in bytes.
+    if (input_type == "fc32") {
+        return sizeof(gr_complex);
+    } else if (input_type == "fc64") {
+        return sizeof(gr_complexd);
+    } else if (input_type == "sc16") {
+        return sizeof(int16_t[2]);
+    } else if (input_type == "sc8") {
+        return sizeof(int8_t[2]);
+    } else {
+        throw std::invalid_argument("Unsupported input type: " + input_type);
+    }
+}
+
+int get_num_samples_per_batch(const float batch_size, const int sample_rate)
+{
+    // Naturally, we can't have a non-integral number of samples in a batch,
+    // so we floor to ensure that the elapsed time per batch doesn't surpass the
+    // user-configured batch size.
+    return std::floor(batch_size * sample_rate);
+}
+
+std::filesystem::path generate_file_path(const std::string& dir,
+                                         const std::string& tag,
+                                         const std::string& extension,
+                                         const bool group_by_date,
+                                         std::tm utc_tm,
+                                         int ms)
+{
+    // Make the file path, embedding the current system time if required.
+    std::ostringstream buffer;
+    std::string fmt = (group_by_date) ? "%Y/%m/%d/" : "";
+    buffer << std::put_time(&utc_tm, fmt.data())
+           << std::put_time(&utc_tm, "%Y-%m-%dT%H:%M:%S.")
+           << std::setw(NUM_DIGITS_MILLISECONDS) << std::setfill('0') << ms << "Z_" << tag
+           << "." << extension;
+    return dir / std::filesystem::path(buffer.str());
+}
+
+} // namespace
 
 namespace gr {
 namespace spectre {
 
 
-using input_type = gr_complex;
-
-
-batched_file_sink::sptr batched_file_sink::make(const std::string parent_dir_path,
-                                                const std::string tag,
+batched_file_sink::sptr batched_file_sink::make(const std::string& dir,
+                                                const std::string& tag,
+                                                const std::string& input_type,
                                                 const float batch_size,
-                                                const int samp_rate,
-                                                const bool is_sweeping,
-                                                const std::string frequency_tag_key,
-                                                const float initial_center_frequency)
+                                                const int sample_rate,
+                                                const bool group_by_date,
+                                                const bool is_tagged,
+                                                const std::string& tag_key,
+                                                const float initial_tag_value)
 {
-    return gnuradio::make_block_sptr<batched_file_sink_impl>(parent_dir_path,
+    return gnuradio::make_block_sptr<batched_file_sink_impl>(dir,
                                                              tag,
+                                                             input_type,
                                                              batch_size,
-                                                             samp_rate,
-                                                             is_sweeping,
-                                                             frequency_tag_key,
-                                                             initial_center_frequency);
-}
+                                                             sample_rate,
+                                                             group_by_date,
+                                                             is_tagged,
+                                                             tag_key,
+                                                             initial_tag_value);
+};
 
 
-batched_file_sink_impl::batched_file_sink_impl(const std::string parent_dir_path,
-                                               const std::string tag,
+batched_file_sink_impl::batched_file_sink_impl(const std::string& dir,
+                                               const std::string& tag,
+                                               const std::string& input_type,
                                                const float batch_size,
-                                               const int samp_rate,
-                                               const bool is_sweeping,
-                                               const std::string frequency_tag_key,
-                                               const float initial_center_frequency)
+                                               const int sample_rate,
+                                               const bool group_by_date,
+                                               const bool is_tagged,
+                                               const std::string& tag_key,
+                                               const float initial_tag_value)
     : gr::sync_block("batched_file_sink",
-                     gr::io_signature::make(
-                         1 /* min inputs */, 1 /* max inputs */, sizeof(input_type)),
+                     gr::io_signature::make(1, 1, get_sizeof_stream_item(input_type)),
                      gr::io_signature::make(0, 0, 0)),
-      _parent_dir_path(parent_dir_path),
-      _tag(tag),
-      _sampling_interval(1.0f / samp_rate),
-      _samples_per_batch(batch_size / _sampling_interval),
-      _is_sweeping(is_sweeping),
-      _frequency_tag_key(pmt::string_to_symbol(frequency_tag_key)),
-      _initial_center_frequency(initial_center_frequency),
-      _create_new_batch(true),
-      _active_tag(),
-      _default_tag(),
-      _input_port(0)
+      d_dir(dir),
+      d_tag(tag),
+      d_input_type(input_type),
+      d_sizeof_stream_item(get_sizeof_stream_item(input_type)),
+      d_nsamples_per_batch(get_num_samples_per_batch(batch_size, sample_rate)),
+      d_is_tagged(is_tagged),
+      d_group_by_date(group_by_date),
+      d_nbuffered_samples(0),
+      d_buffer(std::vector<char>(d_nsamples_per_batch * d_sizeof_stream_item, 0)),
+      d_fdata(nullptr),
+      d_ftags(nullptr),
+      d_batch_time(batch_time{ std::tm{}, 0 }),
+      d_buffer_state(buffer_state::EMPTY)
 {
 }
 
+batched_file_sink_impl::~batched_file_sink_impl() { close_fstreams(); }
 
-batched_file_sink_impl::~batched_file_sink_impl()
-{
-    _bin_file.close();
-    _hdr_file.close();
-}
-
-
-std::string batched_file_sink_impl::get_file_extension(batch_file_type file_type)
-{
-    switch (file_type) {
-    case batch_file_type::BIN:
-        return ".bin";
-    case batch_file_type::HDR:
-        return ".hdr";
-    default:
-        throw std::invalid_argument("Unexpected batch file type!");
-    }
-}
-
-
-batch_time batched_file_sink_impl::get_batch_time()
+void batched_file_sink_impl::update_batch_time()
 {
     using namespace std::chrono;
 
-    // Capture the current system time as a time point.
-    auto now = system_clock::now();
+    // Get the current system time as a time point.
+    time_point<system_clock, nanoseconds> now = system_clock::now();
 
-    // Compute the time elapsed since the Unix epoch (00:00:00 1st Jan 1970 UTC)
-    time_t now_c = system_clock::to_time_t(now);
-    // Copy the `std::tm` struct since `std::gmtime` returns a pointer to static memory.
-    std::tm* utc_datetime = std::gmtime(&now_c);
+    // Convert this to UTC (to seconds precision).
+    std::time_t now_c = system_clock::to_time_t(now);
+    std::tm* utc_now = std::gmtime(&now_c);
 
-    // Compute the millisecond fractional component of the current system time.
-    auto time_since_unix_epoch = now.time_since_epoch();
-    auto seconds_since_unix_epoch = seconds(static_cast<int64_t>(now_c));
-    auto chrono_millisecond_component =
-        duration_cast<milliseconds>(time_since_unix_epoch - seconds_since_unix_epoch);
-    int64_t millisecond_component{ chrono_millisecond_component.count() };
+    // Then, extract the millisecond component.
+    milliseconds ms =
+        duration_cast<milliseconds>(now.time_since_epoch() - seconds(now_c));
 
-    return batch_time{ utc_datetime, millisecond_component };
+    d_batch_time.utc_tm = *utc_now;
+    d_batch_time.ms = static_cast<int>(ms.count());
 }
 
-
-fs::path
-batched_file_sink_impl::get_absolute_batch_file_path(std::tm* utc_datetime,
-                                                     batch_file_type file_type) const
+void batched_file_sink_impl::open_fstream(std::ofstream& f, const std::string& extension)
 {
-    std::ostringstream oss;
-    oss << std::put_time(utc_datetime, "%Y/%m/%d/")
-        << std::put_time(utc_datetime, "%Y-%m-%dT%H:%M:%S") << "_" << _tag
-        << get_file_extension(file_type);
-    return _parent_dir_path / fs::path(oss.str());
-}
+    using namespace std::filesystem;
 
+    path filename = generate_file_path(
+        d_dir, d_tag, extension, d_group_by_date, d_batch_time.utc_tm, d_batch_time.ms);
 
-batch_metadata batched_file_sink_impl::get_new_batch_metadata() const
-{
-    batch_time current_batch_time{ get_batch_time() };
-    fs::path bin_file_path{ get_absolute_batch_file_path(current_batch_time.utc_datetime,
-                                                         batch_file_type::BIN) };
-    fs::path hdr_file_path{ get_absolute_batch_file_path(current_batch_time.utc_datetime,
-                                                         batch_file_type::HDR) };
-    return batch_metadata{ current_batch_time, bin_file_path, hdr_file_path };
-}
-
-
-void batched_file_sink_impl::open_batch_file(std::ofstream& file, fs::path file_path)
-{
-    // Create the parent path if it does not already exist.
-    fs::path dated_parent_directory{ file_path.parent_path() };
-    if (!fs::exists(dated_parent_directory)) {
-        fs::create_directories(dated_parent_directory);
-    }
-    // If the file is open, close it before opening another file.
-    if (file.is_open()) {
-        file.close();
+    // If the parent directory does not exist, create it.
+    path parent_dir{ filename.parent_path() };
+    if (!exists(parent_dir)) {
+        create_directories(parent_dir);
     }
 
-    // Open a new file at the appropriate file path.
-    file.open(file_path, std::ios::binary);
-}
-
-
-void batched_file_sink_impl::write_millisecond_component_to_detached_header()
-{
-    // Cast as a float for consistent reading back in SPECTRE.
-    float millisecond_component{ static_cast<float>(
-        _batch_metadata.time.millisecond_component) };
-    write_to_file(_hdr_file, &millisecond_component, 1);
-}
-
-
-bool batched_file_sink_impl::tag_is_set(tag_t tag) const
-{
-    return !(tag == _default_tag);
-}
-
-
-std::optional<tag_t> batched_file_sink_impl::get_tag_from_first_sample()
-{
-    // "tags" is a vector which will store a single tag if it exists for the first sample,
-    // and is empty otherwise.
-    std::vector<tag_t> tags;
-    uint64_t rel_start{ 0 };
-    uint64_t rel_end{ 1 };
-    get_tags_in_window(tags, _input_port, rel_start, rel_end, _frequency_tag_key);
-
-    if (tags.empty()) {
-        return std::nullopt;
-    } else {
-        return tags[0];
+    // Open the file.
+    f.open(filename.string(), std::ios::binary);
+    if (!f.is_open()) {
+        const std::string msg = "Failed to open: " + filename.string();
+        d_logger->error(msg);
+        throw std::runtime_error(msg);
     }
 }
 
-
-bool batched_file_sink_impl::initial_center_frequency_is_set() const
+void batched_file_sink_impl::open_fstreams()
 {
-    return (_initial_center_frequency != 0);
-}
-
-
-void batched_file_sink_impl::set_initial_active_tag()
-{
-    // If the first sample has a tag, use that!
-    std::optional<tag_t> first_tag = get_tag_from_first_sample();
-    if (first_tag) {
-        _active_tag = *first_tag;
-        return;
-    }
-
-    // If a tag is already set, update the offset for the current work function call.
-    if (tag_is_set(_active_tag)) {
-        _active_tag.offset = nitems_read(0);
-        return;
-    }
-
-    // If no tag is set, use the user-defined initial center frequency to define the
-    // active tag. This should only ever be reached at the first call of the work
-    // function.
-    if (initial_center_frequency_is_set()) {
-        // Use zero here, as the tag is attached to the first in the stream.
-        _active_tag.offset = 0;
-        _active_tag.key = _frequency_tag_key;
-        _active_tag.value = pmt::from_float(_initial_center_frequency);
-        _active_tag.srcid = pmt::intern(alias());
-        return;
-    }
-
-    // If none of the above conditions are met, throw an error.
-    throw std::runtime_error(
-        "Undefined tag state: Unable to infer center frequency of the first sample. "
-        "Verify input tags or set an initial center frequency.");
-}
-
-
-std::vector<float>
-batched_file_sink_impl::get_num_samples_per_center_frequency(int noutput_items)
-{
-    // Get all frequency tags ranging from the current active tag (in absolute item time)
-    // to the end of the current call to work (in absolute item time)
-    std::vector<tag_t> tags;
-    uint64_t abs_start{ _active_tag.offset + 1 };
-    uint64_t abs_end{ nitems_read(_input_port) + noutput_items };
-    get_tags_in_range(tags, _input_port, abs_start, abs_end, _frequency_tag_key);
-
-    // Create a vector which will hold the number of samples per center frequency
-    // That is, effectively, an ordered list of pairs (freq_i, num_samples_at_freq_i)
-    // All numerical values are cast as floats for consistent reading back in SPECTRE.
-    uint64_t num_tags{ tags.size() };
-    uint64_t num_elements = (2 * num_tags);
-    std::vector<float> sweep_metadata(num_elements, 0.0f);
-
-    for (uint64_t n{ 0 }; n < num_tags; n++) {
-        tag_t next_tag{ tags[n] };
-        // Infer the number of samples at each center frequency through the tag offsets.
-        uint64_t num_samples{ next_tag.offset - _active_tag.offset };
-        float active_frequency_f{ pmt::to_float(_active_tag.value) };
-        float num_samples_f{ static_cast<float>(num_samples) };
-        // Copy the values into the array.
-        sweep_metadata[2 * n] = active_frequency_f;
-        sweep_metadata[2 * n + 1] = num_samples_f;
-        // Update the active tag
-        _active_tag = next_tag;
-    }
-
-    if (_create_new_batch) {
-        // Essentially, at this moment we have handled all the tags in the current call of
-        // the work function. Thus, there is no "next tag" to evaluate the total number of
-        // samples associated with the current active tag. For a clean handover to the
-        // next file, we compute the number of samples remaining at the active tag in the
-        // current call of the work function. In this way, we will have declared for every
-        // IQ sample dumped to the bin file, what frequency it was collected at.
-
-        uint64_t num_samples_remaining = abs_end - _active_tag.offset;
-        float active_frequency_f{ pmt::to_float(_active_tag.value) };
-        float num_samples_remaining_f = static_cast<float>(num_samples_remaining);
-        sweep_metadata.push_back(active_frequency_f);
-        sweep_metadata.push_back(num_samples_remaining_f);
-    }
-
-    return sweep_metadata;
-}
-
-
-void batched_file_sink_impl::initialise_new_batch()
-{
-    // Effectively reset the elapsed time for the current batch.
-    _sample_count = 0;
-    // Reset boolean flag indicating new batch will be created.
-    _create_new_batch = false;
-    // Update the batch metadata member variable with the current system time.
-    _batch_metadata = get_new_batch_metadata();
-
-    open_batch_file(_bin_file, _batch_metadata.bin_file_path);
-    open_batch_file(_hdr_file, _batch_metadata.hdr_file_path);
-    write_millisecond_component_to_detached_header();
-
-    if (_is_sweeping) {
-        set_initial_active_tag();
+    open_fstream(d_fdata, d_input_type);
+    if (d_is_tagged) {
+        open_fstream(d_ftags, "hdr");
     }
 }
 
+int batched_file_sink_impl::fill_buffer(int noutput_items, const unsigned char* in)
+{
+    // Fill the buffer with as many samples as possible, without exceeding its fixed size.
+    // Keep a record of how many we've consumed, so we can report back to gnuradio
+    // runtime.
+    int n_consume = std::min(noutput_items, d_nsamples_per_batch - d_nbuffered_samples);
+    std::memcpy(d_buffer.data() + d_nbuffered_samples * d_sizeof_stream_item,
+                in,
+                n_consume * d_sizeof_stream_item);
+    d_nbuffered_samples += n_consume;
+    if (d_nbuffered_samples == d_nsamples_per_batch) {
+        d_buffer_state = buffer_state::FULL;
+    }
+    return n_consume;
+}
+
+void batched_file_sink_impl::flush_buffer()
+{
+    d_fdata.write(d_buffer.data(), d_sizeof_stream_item * d_nsamples_per_batch);
+    d_nbuffered_samples = 0;
+}
+
+
+void batched_file_sink_impl::close_fstreams()
+{
+    if (d_fdata.is_open()) {
+        d_fdata.close();
+    }
+    if (d_ftags) {
+        d_ftags.close();
+    }
+}
+
+void batched_file_sink_impl::init()
+{
+    // The batch is timestamped when the file is opened, so open the file now.
+    update_batch_time();
+    open_fstreams();
+    d_buffer_state = buffer_state::FILLING;
+}
+
+void batched_file_sink_impl::reset()
+{
+    flush_buffer();
+    close_fstreams();
+    d_buffer_state = buffer_state::EMPTY;
+}
 
 int batched_file_sink_impl::work(int noutput_items,
                                  gr_vector_const_void_star& input_items,
                                  gr_vector_void_star& output_items)
 {
-    if (_create_new_batch) {
-        initialise_new_batch();
+
+    if (d_buffer_state == buffer_state::EMPTY) {
+        init();
     }
 
-    // Write the input samples as contiguous raw bytes to the binary file.
-    const input_type* in = static_cast<const input_type*>(input_items[0]);
-    write_to_file(_bin_file, in, noutput_items);
+    const unsigned char* in = reinterpret_cast<const unsigned char*>(input_items[0]);
+    int n_consumed = fill_buffer(noutput_items, in);
 
-    // Update the elapsed time (inferred by sample counting).
-    _sample_count += noutput_items;
-
-    // If the elapsed time exceeds the batch size...
-    if (_sample_count >= _samples_per_batch) {
-        // At the next call of the work function, create a new batch.
-        _create_new_batch = true;
+    if (d_buffer_state == buffer_state::FULL) {
+        reset();
     }
 
-    if (_is_sweeping) {
-        std::vector<float> sweep_metadata{ get_num_samples_per_center_frequency(
-            noutput_items) };
-        write_to_file(_hdr_file, sweep_metadata.data(), sweep_metadata.size());
-    }
-
-    return noutput_items;
+    return n_consumed;
 }
 
-
-} /* namespace spectre */
-} /* namespace gr */
+} // namespace spectre
+} // namespace gr

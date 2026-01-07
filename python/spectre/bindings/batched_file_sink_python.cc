@@ -1,5 +1,5 @@
 /*
- * Copyright 2024 Free Software Foundation, Inc.
+ * Copyright 2026 Free Software Foundation, Inc.
  *
  * This file is part of GNU Radio
  *
@@ -14,7 +14,7 @@
 /* BINDTOOL_GEN_AUTOMATIC(0)                                                       */
 /* BINDTOOL_USE_PYGCCXML(0)                                                        */
 /* BINDTOOL_HEADER_FILE(batched_file_sink.h)                                        */
-/* BINDTOOL_HEADER_FILE_HASH(94132f2471725579b421d4697a5d38e3)                     */
+/* BINDTOOL_HEADER_FILE_HASH(217f212508429ca06be962f354ace83c)                     */
 /***********************************************************************************/
 
 #include <pybind11/complex.h>
@@ -37,13 +37,15 @@ void bind_batched_file_sink(py::module& m)
         std::shared_ptr<batched_file_sink>>(m, "batched_file_sink", D(batched_file_sink))
 
         .def(py::init(&batched_file_sink::make),
-           py::arg("parent_dir_path") = "./",
-           py::arg("tag") = "my-tag",
-           py::arg("batch_size") = 3.,
-           py::arg("samp_rate") = 32000,
-           py::arg("is_sweeping") = false,
-           py::arg("frequency_tag_key") = "freq",
-           py::arg("initial_center_frequency") = 0,
+           py::arg("dir") = ".",
+           py::arg("tag") = "spectre",
+           py::arg("input_type") = "fc32",
+           py::arg("batch_size") = 1.,
+           py::arg("sample_rate") = 32000,
+           py::arg("group_by_date") = false,
+           py::arg("is_tagged") = false,
+           py::arg("tag_key") = "freq",
+           py::arg("initial_tag_value") = 0,
            D(batched_file_sink,make)
         )
         

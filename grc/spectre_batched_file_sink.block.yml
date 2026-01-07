@@ -4,51 +4,62 @@ category: '[spectre]'
 
 templates:
   imports: from gnuradio import spectre
-  make: spectre.batched_file_sink(${parent_dir_path}, ${tag}, ${batch_size}, ${samp_rate}, ${is_sweeping}, ${frequency_tag_key}, ${initial_center_frequency})
+  make: spectre.batched_file_sink(${dir}, ${tag}, '${input_type}', ${batch_size}, ${sample_rate}, ${group_by_date}, ${is_tagged}, ${tag_key}, ${initial_tag_value})
 
 parameters:
-  - id: parent_dir_path
-    label: Parent directory path
+  - id: dir
+    label: Directory
     dtype: string
-    default: './'
+    default: '.'
 
   - id: tag
     label: Tag
     dtype: string
-    default: 'my-tag'
+    default: 'spectre'
 
-  - id: batch_size
-    label: Batch size [s]
-    dtype: int
-    default: 3
+  - id: input_type
+    label: Input type
+    dtype: enum
+    options: [fc32, fc64, sc8, sc16]
+    default: fc32
 
-  - id: samp_rate
-    label: Sample rate [samples/s]
+  - id: sample_rate
+    label: Sample rate (Sps)
     dtype: int
     default: 32000
 
-  - id: is_sweeping
-    label: Frequency sweep
+  - id: batch_size
+    label: Batch size (s)
+    dtype: float
+    default: 1
+
+  - id: group_by_date
+    label: Group by date
+    dtype: bool
+    default: 'False'
+
+  - id: is_tagged
+    label: Record tags
     dtype: bool
     default: 'False'
     options: ['False', 'True']
     option_labels: [Disabled, Enabled]
 
-  - id: frequency_tag_key
-    label: Frequency Tag Key
+  - id: tag_key
+    label: tag key
     dtype: string
     default: freq
-    hide: ${'all' if not is_sweeping else 'none'}
+    hide: ${'all' if not is_tagged else 'none'}
 
-  - id: initial_center_frequency
-    label: Center frequency [Hz]
+  - id: initial_tag_value
+    label: Initial tag value
     dtype: float
     default: 0
-    hide: ${'all' if not is_sweeping else 'none'}
+    hide: ${'all' if not is_tagged else 'none'}
 
 inputs:
   - label: in0
     domain: stream
-    dtype: complex
+    dtype: ${input_type}
 
 file_format: 1
