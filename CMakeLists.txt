@@ -11,21 +11,10 @@
 ########################################################################
 cmake_minimum_required(VERSION 3.8)
 project(gr-spectre CXX C)
-enable_testing()
 
-# Install to PyBOMBS target prefix if defined
-if(DEFINED ENV{PYBOMBS_PREFIX})
-    set(CMAKE_INSTALL_PREFIX $ENV{PYBOMBS_PREFIX})
-    message(STATUS "PyBOMBS installed GNU Radio. Setting CMAKE_INSTALL_PREFIX to $ENV{PYBOMBS_PREFIX}")
-endif()
-
-# Select the release build type by default to get optimization flags
-if(NOT CMAKE_BUILD_TYPE)
-   set(CMAKE_BUILD_TYPE "Release")
-   message(STATUS "Build type not specified: defaulting to release.")
-endif(NOT CMAKE_BUILD_TYPE)
-set(CMAKE_BUILD_TYPE ${CMAKE_BUILD_TYPE} CACHE STRING "")
-
+# Enforce release build type.
+set(CMAKE_BUILD_TYPE "Release")
+ 
 # Make sure our local CMake Modules path comes first
 list(INSERT CMAKE_MODULE_PATH 0 ${CMAKE_SOURCE_DIR}/cmake/Modules)
 # Find gnuradio to get access to the cmake modules
@@ -73,38 +62,9 @@ set(GR_PKG_CONF_DIR     ${GR_CONF_DIR}/${CMAKE_PROJECT_NAME}/conf.d)
 set(GR_PKG_LIBEXEC_DIR  ${GR_LIBEXEC_DIR}/${CMAKE_PROJECT_NAME})
 
 ########################################################################
-# On Apple only, set install name and use rpath correctly, if not already set
+# Disable doxygen
 ########################################################################
-if(APPLE)
-    if(NOT CMAKE_INSTALL_NAME_DIR)
-        set(CMAKE_INSTALL_NAME_DIR
-            ${CMAKE_INSTALL_PREFIX}/${GR_LIBRARY_DIR} CACHE
-            PATH "Library Install Name Destination Directory" FORCE)
-    endif(NOT CMAKE_INSTALL_NAME_DIR)
-    if(NOT CMAKE_INSTALL_RPATH)
-        set(CMAKE_INSTALL_RPATH
-            ${CMAKE_INSTALL_PREFIX}/${GR_LIBRARY_DIR} CACHE
-            PATH "Library Install RPath" FORCE)
-    endif(NOT CMAKE_INSTALL_RPATH)
-    if(NOT CMAKE_BUILD_WITH_INSTALL_RPATH)
-        set(CMAKE_BUILD_WITH_INSTALL_RPATH ON CACHE
-            BOOL "Do Build Using Library Install RPath" FORCE)
-    endif(NOT CMAKE_BUILD_WITH_INSTALL_RPATH)
-endif(APPLE)
-
-########################################################################
-# Find gnuradio build dependencies
-########################################################################
-find_package(Doxygen)
-
-########################################################################
-# Setup doxygen option
-########################################################################
-if(DOXYGEN_FOUND)
-    option(ENABLE_DOXYGEN "Build docs using Doxygen" ON)
-else(DOXYGEN_FOUND)
-    option(ENABLE_DOXYGEN "Build docs using Doxygen" OFF)
-endif(DOXYGEN_FOUND)
+option(ENABLE_DOXYGEN "Build docs using Doxygen" OFF)
 
 ########################################################################
 # Create uninstall target
@@ -123,28 +83,5 @@ add_custom_target(uninstall
 ########################################################################
 add_subdirectory(include/gnuradio/spectre)
 add_subdirectory(lib)
-add_subdirectory(apps)
-add_subdirectory(docs)
-# NOTE: manually update below to use GRC to generate C++ flowgraphs w/o python
-if(ENABLE_PYTHON)
-  message(STATUS "PYTHON and GRC components are enabled")
-  add_subdirectory(python/spectre)
-  add_subdirectory(grc)
-else(ENABLE_PYTHON)
-  message(STATUS "PYTHON and GRC components are disabled")
-endif(ENABLE_PYTHON)
-
-########################################################################
-# Install cmake search helper for this library
-########################################################################
-
-install(FILES cmake/Modules/gnuradio-spectreConfig.cmake
-    DESTINATION ${GR_CMAKE_DIR}
-)
-
-include(CMakePackageConfigHelpers)
-configure_package_config_file(
-    ${PROJECT_SOURCE_DIR}/cmake/Modules/targetConfig.cmake.in
-    ${CMAKE_CURRENT_BINARY_DIR}/cmake/Modules/${target}Config.cmake
-    INSTALL_DESTINATION ${GR_CMAKE_DIR}
-)
+add_subdirectory(python/spectre)
+add_subdirectory(grc)

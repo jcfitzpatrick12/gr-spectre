@@ -16,10 +16,6 @@ list(APPEND spectre_sources
     tagged_staircase_impl.cc )
 
 set(spectre_sources "${spectre_sources}" PARENT_SCOPE)
-if(NOT spectre_sources)
-    MESSAGE(STATUS "No C++ sources... skipping lib/")
-    return()
-endif(NOT spectre_sources)
 
 add_library(gnuradio-spectre SHARED ${spectre_sources})
 target_link_libraries(gnuradio-spectre gnuradio::gnuradio-runtime)
@@ -29,44 +25,8 @@ target_include_directories(gnuradio-spectre
 )
 set_target_properties(gnuradio-spectre PROPERTIES DEFINE_SYMBOL "gnuradio_spectre_EXPORTS")
 
-if(APPLE)
-    set_target_properties(gnuradio-spectre PROPERTIES
-        INSTALL_NAME_DIR "${CMAKE_INSTALL_PREFIX}/lib"
-    )
-endif(APPLE)
-
 ########################################################################
 # Install built library files
 ########################################################################
 include(GrMiscUtils)
 GR_LIBRARY_FOO(gnuradio-spectre)
-
-########################################################################
-# Print summary
-########################################################################
-message(STATUS "Using install prefix: ${CMAKE_INSTALL_PREFIX}")
-message(STATUS "Building for version: ${VERSION} / ${LIBVER}")
-
-########################################################################
-# Build and register unit test
-########################################################################
-include(GrTest)
-
-# If your unit tests require special include paths, add them here
-#include_directories()
-# List all files that contain Boost.UTF unit tests here
-list(APPEND test_spectre_sources
-)
-# Anything we need to link to for the unit tests go here
-list(APPEND GR_TEST_TARGET_DEPS gnuradio-spectre)
-
-if(NOT test_spectre_sources)
-    MESSAGE(STATUS "No C++ unit tests... skipping")
-    return()
-endif(NOT test_spectre_sources)
-
-foreach(qa_file ${test_spectre_sources})
-    GR_ADD_CPP_TEST("spectre_${qa_file}"
-        ${CMAKE_CURRENT_SOURCE_DIR}/${qa_file}
-    )
-endforeach(qa_file)

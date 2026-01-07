@@ -24,18 +24,3 @@ GR_PYTHON_INSTALL(
     __init__.py
     DESTINATION ${GR_PYTHON_DIR}/gnuradio/spectre
 )
-
-########################################################################
-# Handle the unit tests
-########################################################################
-include(GrTest)
-
-set(GR_TEST_TARGET_DEPS gnuradio-spectre)
-
-# Create a package directory that tests can import. It includes everything
-# from `python/`.
-add_custom_target(
-  copy_module_for_tests ALL
-  COMMAND ${CMAKE_COMMAND} -E copy_directory ${CMAKE_CURRENT_SOURCE_DIR}
-          ${CMAKE_BINARY_DIR}/test_modules/gnuradio/spectre/
-)
