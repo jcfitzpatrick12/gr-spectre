@@ -1,4 +1,4 @@
-# run uninstall target
+# If we've already built the module, clean up.
 if [ -d "build" ]; then
 	cd build
 	make uninstall
@@ -6,12 +6,7 @@ if [ -d "build" ]; then
 	rm -rf build
 fi
 
-# manually remove rogue shared objects (not
-# doing this step will not affect the build,
-# but there may be runtime Python import issues)
-rm -f /usr/local/lib/libgnuradio-xxx.so*
-
-# build and install
+# Rebuild the module.
 mkdir build
 cd build
 cmake ..
