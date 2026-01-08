@@ -16,10 +16,6 @@ list(APPEND spectre_sources
     tagged_staircase_impl.cc )
 
 set(spectre_sources "${spectre_sources}" PARENT_SCOPE)
-if(NOT spectre_sources)
-    MESSAGE(STATUS "No C++ sources... skipping lib/")
-    return()
-endif(NOT spectre_sources)
 
 add_library(gnuradio-spectre SHARED ${spectre_sources})
 target_link_libraries(gnuradio-spectre gnuradio::gnuradio-runtime)

@@ -6,14 +6,6 @@
 #
 
 ########################################################################
-# Check if there is C++ code at all
-########################################################################
-if(NOT spectre_sources)
-    MESSAGE(STATUS "No C++ sources... skipping python bindings")
-    return()
-endif(NOT spectre_sources)
-
-########################################################################
 # Check for pygccxml
 ########################################################################
 GR_PYTHON_CHECK_MODULE_RAW(
