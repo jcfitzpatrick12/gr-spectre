@@ -17,17 +17,17 @@ namespace spectre {
  * \brief Writes the input stream to binary files in fixed-length batches.
  * \ingroup spectre
  *
- * \details Streams input samples as raw binary to files:
+ * \details Streams input samples as raw binary to files organised by date:
  *
- *     <timestamp>_<tag>.<input_type>
+ *     <dir>/<year>/<month>/<day>/<timestamp>_<tag>.<input_type>
  *
- * where `<timestamp>` is the ISO 8601-formatted system time, `<tag>` is a user-defined
- * identifier, and `<input_type>` specifies the data type (e.g., `fc32`). After a
- * user-configured duration, a new file is opened. The files can be optionally organised
- * by date. If the input stream has stream tags, a corresponding metadata file is also
+ * where `<dir>` is a user-configured directory, `<year>`, `<month>`, and `<day>` are
+ * derived from the system date, `<timestamp>` is the ISO 8601-formatted system time,
+ * `<tag>` is a user-defined identifier, and `<input_type>` specifies the data type (e.g.,
+ * `fc32`). If the input stream has stream tags, a corresponding metadata file can be
  * created:
  *
- *     <timestamp>_<tag>.hdr
+ *     <dir>/<year>/<month>/<day>/<timestamp>_<tag>.hdr
  *
  * which contains tuples of tag values and the number of samples recorded at that tag,
  * both recorded as single-precision floats.

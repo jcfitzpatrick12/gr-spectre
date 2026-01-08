@@ -7,35 +7,18 @@
 #
 
 ########################################################################
-# Include python install macros
+# Setup dependencies
 ########################################################################
-include(GrPython)
-if(NOT PYTHONINTERP_FOUND)
-    return()
-endif()
-
-add_subdirectory(bindings)
+find_package(Doxygen)
 
 ########################################################################
-# Install python sources
+# Begin conditional configuration
 ########################################################################
-GR_PYTHON_INSTALL(
-    FILES
-    __init__.py
-    DESTINATION ${GR_PYTHON_DIR}/gnuradio/spectre
-)
+if(ENABLE_DOXYGEN)
 
 ########################################################################
-# Handle the unit tests
+# Add subdirectories
 ########################################################################
-include(GrTest)
+add_subdirectory(doxygen)
 
-set(GR_TEST_TARGET_DEPS gnuradio-spectre)
-
-# Create a package directory that tests can import. It includes everything
-# from `python/`.
-add_custom_target(
-  copy_module_for_tests ALL
-  COMMAND ${CMAKE_COMMAND} -E copy_directory ${CMAKE_CURRENT_SOURCE_DIR}
-          ${CMAKE_BINARY_DIR}/test_modules/gnuradio/spectre/
-)
+endif(ENABLE_DOXYGEN)
