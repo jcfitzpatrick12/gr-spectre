@@ -106,7 +106,6 @@ add_subdirectory(lib)
 add_subdirectory(docs)
 add_subdirectory(python/spectre)
 add_subdirectory(grc)
-endif(ENABLE_PYTHON)
 
 ########################################################################
 # Install cmake search helper for this library
