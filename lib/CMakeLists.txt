@@ -29,12 +29,6 @@ target_include_directories(gnuradio-spectre
 )
 set_target_properties(gnuradio-spectre PROPERTIES DEFINE_SYMBOL "gnuradio_spectre_EXPORTS")
 
-if(APPLE)
-    set_target_properties(gnuradio-spectre PROPERTIES
-        INSTALL_NAME_DIR "${CMAKE_INSTALL_PREFIX}/lib"
-    )
-endif(APPLE)
-
 ########################################################################
 # Install built library files
 ########################################################################
