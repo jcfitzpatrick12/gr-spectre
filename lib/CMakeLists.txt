@@ -13,7 +13,9 @@ include(GrPlatform) #define LIB_SUFFIX
 list(APPEND spectre_sources
     batched_file_sink_impl.cc
     sweep_driver_impl.cc
-    tagged_staircase_impl.cc )
+    tagged_staircase_impl.cc
+    frequency_sweeper_impl.cc
+    utils.cc)
 
 set(spectre_sources "${spectre_sources}" PARENT_SCOPE)
 

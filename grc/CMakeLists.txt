@@ -8,5 +8,6 @@
 install(FILES
     spectre_batched_file_sink.block.yml
     spectre_sweep_driver.block.yml
-    spectre_tagged_staircase.block.yml DESTINATION share/gnuradio/grc/blocks
+    spectre_tagged_staircase.block.yml
+    spectre_frequency_sweeper.block.yml DESTINATION share/gnuradio/grc/blocks
 )
