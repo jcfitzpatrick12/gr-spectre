@@ -5,6 +5,7 @@
  */
 
 #include "batched_file_sink_impl.h"
+#include "utils.h"
 
 #include <algorithm>
 #include <chrono>
@@ -17,22 +18,6 @@ namespace {
 
 static constexpr int NUM_DIGITS_MILLISECONDS = 3;
 static constexpr int INPUT_PORT = 0;
-
-int get_sizeof_stream_item(const std::string& input_type)
-{
-    // Get the size of each item in the input stream, in bytes.
-    if (input_type == "fc32") {
-        return sizeof(gr_complex);
-    } else if (input_type == "fc64") {
-        return sizeof(gr_complexd);
-    } else if (input_type == "sc16") {
-        return sizeof(int16_t[2]);
-    } else if (input_type == "sc8") {
-        return sizeof(int8_t[2]);
-    } else {
-        throw std::invalid_argument("Unsupported input type: " + input_type);
-    }
-}
 
 int get_num_samples_per_batch(const float batch_size, const int sample_rate)
 {
