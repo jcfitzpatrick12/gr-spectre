@@ -49,7 +49,7 @@ std::filesystem::path generate_file_path(const std::string& dir,
                                          std::tm utc_tm,
                                          int ms)
 {
-    // Make the file path, embedding the current system time if required.
+    // Make the file path, using date-based subdirectories if it's required.
     std::ostringstream buffer;
     std::string fmt = (group_by_date) ? "%Y/%m/%d/" : "";
     buffer << std::put_time(&utc_tm, fmt.data())
@@ -147,7 +147,7 @@ void batched_file_sink_impl::set_batch_time()
 {
     using namespace std::chrono;
 
-    // Get the current system time as a time point.
+    // Get the current system time.
     time_point<system_clock, nanoseconds> now = system_clock::now();
 
     // Convert this to UTC (to seconds precision).
@@ -169,13 +169,11 @@ void batched_file_sink_impl::open_fstream(std::ofstream& f, const std::string& e
     path filename = generate_file_path(
         d_dir, d_tag, extension, d_group_by_date, d_batch_time.utc_tm, d_batch_time.ms);
 
-    // If the parent directory does not exist, create it.
     path parent_dir{ filename.parent_path() };
     if (!exists(parent_dir)) {
         create_directories(parent_dir);
     }
 
-    // Open the file.
     f.open(filename.string(), std::ios::binary);
     if (!f.is_open()) {
         const std::string msg = "Failed to open: " + filename.string();
@@ -257,7 +255,7 @@ void batched_file_sink_impl::set_initial_active_tag()
     }
 
     // As a fallback, use the user-defined tag value if it's provided to initialise the
-    // active tag. This should only really be called at the first call to work.
+    // active tag. This should only really be reached at the first call to work.
     bool is_first_work_call = nitems_read(INPUT_PORT) == 0;
     if (d_initial_tag_value && is_first_work_call) {
         // Use zero here, to indicate the tag is attached to the first item
@@ -276,7 +274,7 @@ void batched_file_sink_impl::set_initial_active_tag()
 
 void batched_file_sink_impl::fill_tag_buffer(int nconsumed_items)
 {
-    // Find all tags between (and excluding) the active tag, to however many samples have
+    // Find all tags between (and excluding) the active tag and however many samples have
     // been consumed by the current call to work. Remember, the active tag may be attached
     // to a sample in a previous call to work.
     std::vector<tag_t> tags;
@@ -319,9 +317,8 @@ void batched_file_sink_impl::fill_tag_buffer(int nconsumed_items)
 void batched_file_sink_impl::flush_tag_buffer()
 {
     const char* s = reinterpret_cast<const char*>(d_tags_buffer.data());
-    // Flush the tag buffer, where for each tag we recorded the tag value and the
-    // number of samples associated with that value. In contrast to the data buffer, it's
-    // almost certainly not full.
+    // Flush the tag buffer, avoiding garbage values. In contrast to the data buffer, it's
+    // (almost certainly) only partially filled.
     size_t num_chars = 2 * d_nbuffered_tags * sizeof(float);
     d_ftags.write(s, num_chars);
     d_nbuffered_tags = 0;
@@ -333,7 +330,7 @@ int batched_file_sink_impl::work(int noutput_items,
                                  gr_vector_void_star& output_items)
 {
 
-    // If the buffer is empty, initialise a new batch.
+    // If the data buffer is empty, initialise a new batch.
     if (d_buffer_state == buffer_state::EMPTY) {
         init();
         d_buffer_state = buffer_state::FILLING;
@@ -353,7 +350,7 @@ int batched_file_sink_impl::work(int noutput_items,
         fill_tag_buffer(nconsumed_items);
     }
 
-
+    // If the data buffer is full, flush it to file.
     if (d_buffer_state == buffer_state::FULL) {
         flush();
         d_buffer_state = buffer_state::EMPTY;
