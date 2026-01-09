@@ -36,7 +36,8 @@ parameters:
   - id: group_by_date
     label: Group by date
     dtype: bool
-    default: 'False'
+    options: ['False', 'True']
+    option_labels: [Disabled, Enabled]
 
   - id: is_tagged
     label: Record tags
@@ -46,7 +47,7 @@ parameters:
     option_labels: [Disabled, Enabled]
 
   - id: tag_key
-    label: tag key
+    label: Tag key
     dtype: string
     default: freq
     hide: ${'all' if not is_tagged else 'none'}
