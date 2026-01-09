@@ -72,7 +72,7 @@ private:
 
 
     void init();
-    void reset();
+    void flush();
 
     void set_batch_time();
 

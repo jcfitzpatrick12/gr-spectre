@@ -128,23 +128,19 @@ batched_file_sink_impl::~batched_file_sink_impl() { close_fstreams(); }
 
 void batched_file_sink_impl::init()
 {
-    // The batch is timestamped when the file is opened, so open the file now.
     set_batch_time();
     open_fstreams();
 
     if (d_is_tagged) {
         set_initial_active_tag();
     }
-
-    d_buffer_state = buffer_state::FILLING;
 }
 
-void batched_file_sink_impl::reset()
+void batched_file_sink_impl::flush()
 {
     flush_data_buffer();
     flush_tag_buffer();
     close_fstreams();
-    d_buffer_state = buffer_state::EMPTY;
 }
 
 void batched_file_sink_impl::set_batch_time()
@@ -217,23 +213,18 @@ int batched_file_sink_impl::fill_data_buffer(int noutput_items, const char* in)
                 in,
                 nconsumed_items * d_sizeof_stream_item);
     d_nbuffered_samples += nconsumed_items;
-    if (d_nbuffered_samples == d_nsamples_per_batch) {
-        d_buffer_state = buffer_state::FULL;
-    }
     return nconsumed_items;
 }
 
 void batched_file_sink_impl::flush_data_buffer()
 {
-    // Completely flush the entire data buffer.
+    // Always flush the entire buffer to file.
     d_fdata.write(d_data_buffer.data(), d_sizeof_stream_item * d_nsamples_per_batch);
     d_nbuffered_samples = 0;
 }
 
 std::optional<tag_t> batched_file_sink_impl::get_tag_from_first_sample()
 {
-    // Declare a vector which will store a single tag if it exists for the first sample,
-    // and is empty otherwise.
     std::vector<tag_t> tags;
     uint64_t rel_start{ 0 };
     uint64_t rel_end{ 1 };
@@ -250,24 +241,27 @@ bool batched_file_sink_impl::tag_is_set() const
 
 void batched_file_sink_impl::set_initial_active_tag()
 {
-    // If the first sample in the current call to work has a tag, use that.
+    // If the first sample for the new batch has a tag, use that.
     std::optional<tag_t> first_tag = get_tag_from_first_sample();
     if (first_tag.has_value()) {
         d_active_tag = first_tag.value();
         return;
     }
 
-    // Otherwise, if a tag is set, all samples at the last call to work
-    // have already been accounted for. So, update the offset for the current call
-    // to work.
+    // Otherwise, if a tag is already set, all samples in the previous
+    // call to work have already been recorded in the previous batch.
+    // So, we can simply update the offset and start afresh.
     if (tag_is_set()) {
         d_active_tag.offset = nitems_read(INPUT_PORT);
         return;
     }
 
-    // As a fallback, use the user-defined tag value to initialise the active tag.
-    if (d_initial_tag_value) {
-        // Use zero here, as the tag is attached to the first in the stream.
+    // As a fallback, use the user-defined tag value if it's provided to initialise the
+    // active tag. This should only really be called at the first call to work.
+    bool is_first_work_call = nitems_read(INPUT_PORT) == 0;
+    if (d_initial_tag_value && is_first_work_call) {
+        // Use zero here, to indicate the tag is attached to the first item
+        // in the stream.
         d_active_tag.offset = 0;
         d_active_tag.key = d_tag_key;
         d_active_tag.value = pmt::from_float(d_initial_tag_value);
@@ -275,15 +269,16 @@ void batched_file_sink_impl::set_initial_active_tag()
         return;
     }
 
-    // If none of the above conditions are met, throw an error.
+    // If none of the above conditions are met, somethings went wrong.
     throw std::runtime_error("Undefined tag state. Ensure the first sample is tagged or "
                              "provide an initial value.");
 }
 
 void batched_file_sink_impl::fill_tag_buffer(int nconsumed_items)
 {
-    // Get all the tags ranging from the sample with the active tag,
-    // to however many items have been consumed by the current call to work.
+    // Find all tags between (and excluding) the active tag, to however many samples have
+    // been consumed by the current call to work. Remember, the active tag may be attached
+    // to a sample in a previous call to work.
     std::vector<tag_t> tags;
     uint64_t abs_start = d_active_tag.offset + 1;
     uint64_t abs_end = nitems_read(INPUT_PORT) + nconsumed_items;
@@ -291,8 +286,8 @@ void batched_file_sink_impl::fill_tag_buffer(int nconsumed_items)
     size_t num_tags = tags.size();
 
     for (size_t n = 0; n < num_tags; n++) {
-        // Compute the number of samples associated with each tag by comparing the offset
-        // of the current tag to the offset of the next tag.
+        // Compute the number of samples associated with the active tag, by comparing its
+        // offset to the next tag.
         tag_t next_tag{ tags[n] };
         float tag_value = pmt::to_float(d_active_tag.value);
         float num_samples = static_cast<float>(next_tag.offset - d_active_tag.offset);
@@ -307,10 +302,12 @@ void batched_file_sink_impl::fill_tag_buffer(int nconsumed_items)
     }
 
     if (d_buffer_state == buffer_state::FULL) {
-        // At this point, we want to close the file. however, we've yet to record how many
-        // samples are associated with the current (last available) active tag, since
-        // there's no "next tag" to compute it exactly using offsets. Instead, we simply
-        // compute the number of samples remaining.
+        // At this point, we want to close the current batch. However, we've yet to record
+        // how many samples are associated with the current (last available) active tag,
+        // since there's no "next tag" to compute it exactly using offsets. Instead, we
+        // simply compute the number of samples remaining. There may be samples belonging
+        // to that tag at the next call to work. But they'll be recorded in the next
+        // batch.
         float tag_value = pmt::to_float(d_active_tag.value);
         float num_samples_remaining = static_cast<float>(abs_end - d_active_tag.offset);
         d_tags_buffer[2 * d_nbuffered_tags] = tag_value;
@@ -322,8 +319,9 @@ void batched_file_sink_impl::fill_tag_buffer(int nconsumed_items)
 void batched_file_sink_impl::flush_tag_buffer()
 {
     const char* s = reinterpret_cast<const char*>(d_tags_buffer.data());
-    // For each tag buffered, we recorded the tag value and the number of samples
-    // associated with that value, both as single precision floats.
+    // Flush the tag buffer, where for each tag we recorded the tag value and the
+    // number of samples associated with that value. In contrast to the data buffer, it's
+    // almost certainly not full.
     size_t num_chars = 2 * d_nbuffered_tags * sizeof(float);
     d_ftags.write(s, num_chars);
     d_nbuffered_tags = 0;
@@ -335,21 +333,30 @@ int batched_file_sink_impl::work(int noutput_items,
                                  gr_vector_void_star& output_items)
 {
 
+    // If the buffer is empty, initialise a new batch.
     if (d_buffer_state == buffer_state::EMPTY) {
         init();
+        d_buffer_state = buffer_state::FILLING;
     }
 
     const char* in = reinterpret_cast<const char*>(input_items[0]);
     int nconsumed_items = fill_data_buffer(noutput_items, in);
 
+    // Check if the data buffer is full now, as we'll need to know when we're
+    // filling the tag buffer if we're about to flush.
+    if (d_nbuffered_samples == d_nsamples_per_batch) {
+        d_buffer_state = buffer_state::FULL;
+    }
+
     if (d_is_tagged) {
-        // Only record tags up to the number of consumed items in the input buffer.
+        // Only record tags attached to samples that have been consumed.
         fill_tag_buffer(nconsumed_items);
     }
 
 
     if (d_buffer_state == buffer_state::FULL) {
-        reset();
+        flush();
+        d_buffer_state = buffer_state::EMPTY;
     }
 
     return nconsumed_items;
