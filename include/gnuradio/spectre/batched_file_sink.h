@@ -17,20 +17,19 @@ namespace spectre {
  * \brief Writes the input stream to binary files in fixed-length batches.
  * \ingroup spectre
  *
- * \details Streams input samples as raw binary to files organised by date:
+ * \details Streams input samples as raw binary to files:
  *
- *     <dir>/<year>/<month>/<day>/<timestamp>_<tag>.<input_type>
+ *     <timestamp>_<tag>.<input_type>
  *
- * where `<dir>` is a user-configured directory, `<year>`, `<month>`, and `<day>` are
- * derived from the system date, `<timestamp>` is the ISO 8601-formatted system time,
- * `<tag>` is a user-defined identifier, and `<input_type>` specifies the data type (e.g.,
- * `fc32`). If the input stream has stream tags, a corresponding metadata file can be
- * created:
+ * where `<timestamp>` is the ISO 8601-formatted system time, `<tag>` is a user-defined
+ * identifier and `<input_type>` specifies the data type (e.g., `fc32`). A new
+ * file is opened every time a user-configured duration elapses. If the input
+ * stream has stream tags, a corresponding metadata file can be created:
  *
- *     <dir>/<year>/<month>/<day>/<timestamp>_<tag>.hdr
+ *     <timestamp>_<tag>.hdr
  *
- * which contains tuples of tag values and the number of samples recorded at that tag,
- * both recorded as single-precision floats.
+ * which interleaves the tag values and the number of samples corresponding to that
+ * tag, recording both as single precision floats.
  */
 class SPECTRE_API batched_file_sink : virtual public gr::sync_block
 {
@@ -49,7 +48,7 @@ public:
      * `<year>/<month>/<day>`). \param is_tagged If true, metadata from stream tags is
      * recorded. \param tag_key Key used to extract values from stream tags if `is_tagged`
      * is true. \param initial_tag_value Default value used if no tag is present for the
-     * first sample and `is_tagged` is true.
+     * first sample and `is_tagged` is true. 0 for not provided.
      */
     static sptr make(const std::string& dir = ".",
                      const std::string& tag = "spectre",
