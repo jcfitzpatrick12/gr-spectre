@@ -12,7 +12,6 @@
 install(FILES
     api.h
     batched_file_sink.h
-    sweep_driver.h
     tagged_staircase.h 
     frequency_sweeper.h DESTINATION include/gnuradio/spectre
 )

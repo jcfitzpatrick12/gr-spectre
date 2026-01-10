@@ -21,7 +21,6 @@ include(GrPybind)
 ########################################################################
 list(APPEND spectre_python_files
     batched_file_sink_python.cc
-    sweep_driver_python.cc
     tagged_staircase_python.cc
     frequency_sweeper_python.cc python_bindings.cc)
 
