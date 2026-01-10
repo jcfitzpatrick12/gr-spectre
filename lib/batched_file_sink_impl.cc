@@ -19,7 +19,7 @@ namespace {
 static constexpr int NUM_DIGITS_MILLISECONDS = 3;
 static constexpr int INPUT_PORT = 0;
 
-int get_num_samples_per_batch(const float batch_size, const int sample_rate)
+int get_num_samples_per_batch(const float batch_size, const float sample_rate)
 {
     // Naturally, we can't have a non-integral number of samples in a batch,
     // so we floor to ensure that the elapsed time per batch doesn't surpass the
@@ -54,7 +54,7 @@ batched_file_sink::sptr batched_file_sink::make(const std::string& dir,
                                                 const std::string& tag,
                                                 const std::string& input_type,
                                                 const float batch_size,
-                                                const int sample_rate,
+                                                const float sample_rate,
                                                 const bool group_by_date,
                                                 const bool is_tagged,
                                                 const std::string& tag_key,
@@ -76,7 +76,7 @@ batched_file_sink_impl::batched_file_sink_impl(const std::string& dir,
                                                const std::string& tag,
                                                const std::string& input_type,
                                                const float batch_size,
-                                               const int sample_rate,
+                                               const float sample_rate,
                                                const bool group_by_date,
                                                const bool is_tagged,
                                                const std::string& tag_key,

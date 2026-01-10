@@ -35,7 +35,7 @@ public:
                            const std::string& tag,
                            const std::string& input_type,
                            const float batch_size,
-                           const int sample_rate,
+                           const float sample_rate,
                            const bool group_by_date,
                            const bool is_tagged,
                            const std::string& tag_key,

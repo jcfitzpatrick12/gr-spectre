@@ -54,7 +54,7 @@ public:
                      const std::string& tag = "spectre",
                      const std::string& input_type = "fc32",
                      const float batch_size = 1.0,
-                     const int sample_rate = 32000,
+                     const float sample_rate = 32000,
                      const bool group_by_date = false,
                      const bool is_tagged = false,
                      const std::string& tag_key = "freq",

@@ -25,7 +25,7 @@ parameters:
 
   - id: sample_rate
     label: Sample rate (Sps)
-    dtype: int
+    dtype: float
     default: 32000
 
   - id: batch_size
