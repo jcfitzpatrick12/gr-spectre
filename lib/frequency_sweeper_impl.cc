@@ -58,6 +58,7 @@ frequency_sweeper_impl::frequency_sweeper_impl(float min_freq,
       d_nsamples(0),
       d_active_freq(min_freq)
 {
+    message_port_register_out(OUTPUT_PORT);
 }
 
 frequency_sweeper_impl::~frequency_sweeper_impl() {}
