@@ -41,7 +41,7 @@ public:
                      float max_freq = 1106,
                      float hop_freq = 2e6,
                      float dwell_time = 200e-3,
-                     int sample_rate = 2e6,
+                     float sample_rate = 2e6,
                      const std::string& retune_cmd_name = "freq",
                      const std::string& input_type = "fc32");
 };

@@ -21,7 +21,7 @@ public:
                            float max_freq,
                            float hop_freq,
                            float dwell_time,
-                           int sample_rate,
+                           float sample_rate,
                            const std::string& retune_cmd_name,
                            const std::string& input_type);
     ~frequency_sweeper_impl();

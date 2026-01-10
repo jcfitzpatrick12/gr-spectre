@@ -9,7 +9,7 @@
 #include <gnuradio/io_signature.h>
 
 namespace {
-int get_num_samples_per_step(float dwell_time, int sample_rate)
+int get_num_samples_per_step(float dwell_time, float sample_rate)
 {
     // Naturally, we can't have a non-integral number of samples per step,
     // so we floor to ensure that the elapsed time per step doesn't surpass the
@@ -26,7 +26,7 @@ frequency_sweeper::sptr frequency_sweeper::make(float min_freq,
                                                 float max_freq,
                                                 float hop_freq,
                                                 float dwell_time,
-                                                int sample_rate,
+                                                float sample_rate,
                                                 const std::string& retune_cmd_name,
                                                 const std::string& input_type)
 {
@@ -44,7 +44,7 @@ frequency_sweeper_impl::frequency_sweeper_impl(float min_freq,
                                                float max_freq,
                                                float hop_freq,
                                                float dwell_time,
-                                               int sample_rate,
+                                               float sample_rate,
                                                const std::string& retune_cmd_name,
                                                const std::string& input_type)
     : gr::sync_block("frequency_sweeper",

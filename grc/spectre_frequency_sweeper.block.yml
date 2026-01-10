@@ -24,7 +24,7 @@ parameters:
 
   - id: sample_rate
     label: Sample rate (Sps)
-    dtype: int
+    dtype: float
     default: 2e6
 
   - id: dwell_time
