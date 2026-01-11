@@ -19,7 +19,7 @@ namespace spectre {
 
 struct batch_time {
     std::tm utc_tm;
-    int ms;
+    int us;
 };
 
 enum buffer_state {
