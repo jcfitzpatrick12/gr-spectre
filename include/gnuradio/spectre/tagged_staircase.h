@@ -1,7 +1,6 @@
-/* -*- c++ -*- */
 /*
- * Copyright 2024 Jimmy Fitzpatrick.
- *
+ * Copyright 2024-2026 Jimmy Fitzpatrick.
+ * This file is part of SPECTRE
  * SPDX-License-Identifier: GPL-3.0-or-later
  */
 
