@@ -1,7 +1,6 @@
-/* -*- c++ -*- */
 /*
- * Copyright 2024 Jimmy Fitzpatrick.
- *
+ * Copyright 2024-2026 Jimmy Fitzpatrick.
+ * This file is part of SPECTRE
  * SPDX-License-Identifier: GPL-3.0-or-later
  */
 
@@ -15,9 +14,22 @@ namespace gr {
 namespace spectre {
 
 /*!
- * \brief <+description of block+>
- * \ingroup sandbox
+ * \brief Writes the input stream to binary files in fixed-length batches.
+ * \ingroup spectre
  *
+ * \details Streams input samples as raw binary to files:
+ *
+ *     <timestamp>_<tag>.<input_type>
+ *
+ * where `<timestamp>` is the ISO 8601-formatted system time, `<tag>` is a user-defined
+ * identifier and `<input_type>` specifies the data type (e.g., `fc32`). A new
+ * file is opened every time a user-configured duration elapses. If the input
+ * stream has stream tags, a corresponding metadata file can be created:
+ *
+ *     <timestamp>_<tag>.hdr
+ *
+ * which interleaves the tag values and the number of samples corresponding to that
+ * tag, recording both as single precision floats.
  */
 class SPECTRE_API batched_file_sink : virtual public gr::sync_block
 {
@@ -25,23 +37,31 @@ public:
     typedef std::shared_ptr<batched_file_sink> sptr;
 
     /*!
-     * \brief Return a shared_ptr to a new instance of sandbox::batched_file_sink.
+     * \brief Make a batched file sink.
      *
-     * To avoid accidental use of raw pointers, sandbox::batched_file_sink's
-     * constructor is in a private implementation
-     * class. sandbox::batched_file_sink::make is the public interface for
-     * creating new instances.
+     * \param dir Shared ancestral directory where output files will be stored.
+     * \param tag Identifier included in the output file names.
+     * \param input_type The data type of each sample in the input stream.
+     * \param batch_size Duration (in seconds) to record samples from the input stream,
+     * before creating a new file. \param sample_rate The sample rate of the input stream.
+     * \param group_by_date If true, organise files using date-based subdirectories (e.g.,
+     * `<year>/<month>/<day>`). \param is_tagged If true, metadata from stream tags is
+     * recorded. \param tag_key Key used to extract values from stream tags if `is_tagged`
+     * is true. \param initial_tag_value Default value used if no tag is present for the
+     * first sample and `is_tagged` is true. 0 for not provided.
      */
-    static sptr make(const std::string parent_dir_path = "./",
-                     const std::string tag = "my-tag",
-                     const float batch_size = 3.0,
-                     const int samp_rate = 32000,
-                     const bool is_sweeping = false,
-                     const std::string frequency_tag_key = "freq",
-                     const float initial_center_frequency = 0);
+    static sptr make(const std::string& dir = ".",
+                     const std::string& tag = "spectre",
+                     const std::string& input_type = "fc32",
+                     const float batch_size = 1.0,
+                     const float sample_rate = 32000,
+                     const bool group_by_date = false,
+                     const bool is_tagged = false,
+                     const std::string& tag_key = "freq",
+                     const float initial_tag_value = 0);
 };
 
 } // namespace spectre
 } // namespace gr
 
-#endif /* INCLUDED_SPECTRE_BATCHED_FILE_SINK_H */
+#endif // INCLUDED_SPECTRE_BATCHED_FILE_SINK_H

@@ -73,26 +73,6 @@ set(GR_PKG_CONF_DIR     ${GR_CONF_DIR}/${CMAKE_PROJECT_NAME}/conf.d)
 set(GR_PKG_LIBEXEC_DIR  ${GR_LIBEXEC_DIR}/${CMAKE_PROJECT_NAME})
 
 ########################################################################
-# On Apple only, set install name and use rpath correctly, if not already set
-########################################################################
-if(APPLE)
-    if(NOT CMAKE_INSTALL_NAME_DIR)
-        set(CMAKE_INSTALL_NAME_DIR
-            ${CMAKE_INSTALL_PREFIX}/${GR_LIBRARY_DIR} CACHE
-            PATH "Library Install Name Destination Directory" FORCE)
-    endif(NOT CMAKE_INSTALL_NAME_DIR)
-    if(NOT CMAKE_INSTALL_RPATH)
-        set(CMAKE_INSTALL_RPATH
-            ${CMAKE_INSTALL_PREFIX}/${GR_LIBRARY_DIR} CACHE
-            PATH "Library Install RPath" FORCE)
-    endif(NOT CMAKE_INSTALL_RPATH)
-    if(NOT CMAKE_BUILD_WITH_INSTALL_RPATH)
-        set(CMAKE_BUILD_WITH_INSTALL_RPATH ON CACHE
-            BOOL "Do Build Using Library Install RPath" FORCE)
-    endif(NOT CMAKE_BUILD_WITH_INSTALL_RPATH)
-endif(APPLE)
-
-########################################################################
 # Find gnuradio build dependencies
 ########################################################################
 find_package(Doxygen)
@@ -123,16 +103,9 @@ add_custom_target(uninstall
 ########################################################################
 add_subdirectory(include/gnuradio/spectre)
 add_subdirectory(lib)
-add_subdirectory(apps)
 add_subdirectory(docs)
-# NOTE: manually update below to use GRC to generate C++ flowgraphs w/o python
-if(ENABLE_PYTHON)
-  message(STATUS "PYTHON and GRC components are enabled")
-  add_subdirectory(python/spectre)
-  add_subdirectory(grc)
-else(ENABLE_PYTHON)
-  message(STATUS "PYTHON and GRC components are disabled")
-endif(ENABLE_PYTHON)
+add_subdirectory(python/spectre)
+add_subdirectory(grc)
 
 ########################################################################
 # Install cmake search helper for this library

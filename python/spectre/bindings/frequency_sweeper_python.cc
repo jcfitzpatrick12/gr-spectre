@@ -1,5 +1,5 @@
 /*
- * Copyright 2025 Free Software Foundation, Inc.
+ * Copyright 2026 Free Software Foundation, Inc.
  *
  * This file is part of GNU Radio
  *
@@ -13,8 +13,8 @@
 /* If manual edits are made, the following tags should be modified accordingly.    */
 /* BINDTOOL_GEN_AUTOMATIC(0)                                                       */
 /* BINDTOOL_USE_PYGCCXML(0)                                                        */
-/* BINDTOOL_HEADER_FILE(sweep_driver.h)                                        */
-/* BINDTOOL_HEADER_FILE_HASH(f8deac244aefb0f65690db71d9619b6c)                     */
+/* BINDTOOL_HEADER_FILE(frequency_sweeper.h)                                        */
+/* BINDTOOL_HEADER_FILE_HASH(4d26b7ca0ba4b76b18dc758ee1f01511)                     */
 /***********************************************************************************/
 
 #include <pybind11/complex.h>
@@ -23,27 +23,28 @@
 
 namespace py = pybind11;
 
-#include <gnuradio/spectre/sweep_driver.h>
+#include <gnuradio/spectre/frequency_sweeper.h>
 // pydoc.h is automatically generated in the build directory
-#include <sweep_driver_pydoc.h>
+#include <frequency_sweeper_pydoc.h>
 
-void bind_sweep_driver(py::module& m)
+void bind_frequency_sweeper(py::module& m)
 {
 
-    using sweep_driver    = ::gr::spectre::sweep_driver;
+    using frequency_sweeper    = ::gr::spectre::frequency_sweeper;
 
 
-    py::class_<sweep_driver, gr::sync_block, gr::block, gr::basic_block,
-        std::shared_ptr<sweep_driver>>(m, "sweep_driver", D(sweep_driver))
+    py::class_<frequency_sweeper, gr::sync_block, gr::block, gr::basic_block,
+        std::shared_ptr<frequency_sweeper>>(m, "frequency_sweeper", D(frequency_sweeper))
 
-        .def(py::init(&sweep_driver::make),
-           py::arg("min_freq") = 80000000,
-           py::arg("max_freq") = 120000000,
-           py::arg("freq_step") = 6000000,
-           py::arg("samp_rate") = 6000000,
-           py::arg("samples_per_step") = 350000,
+        .def(py::init(&frequency_sweeper::make),
+           py::arg("min_freq") = 9.0E+7,
+           py::arg("max_freq") = 1106,
+           py::arg("hop_freq") = 2.0E+6,
+           py::arg("dwell_time") = 0.20000000000000001,
+           py::arg("sample_rate") = 2.0E+6,
            py::arg("retune_cmd_name") = "freq",
-           D(sweep_driver,make)
+           py::arg("input_type") = "fc32",
+           D(frequency_sweeper,make)
         )
         
 

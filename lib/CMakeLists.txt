@@ -12,14 +12,11 @@
 include(GrPlatform) #define LIB_SUFFIX
 list(APPEND spectre_sources
     batched_file_sink_impl.cc
-    sweep_driver_impl.cc
-    tagged_staircase_impl.cc )
+    tagged_staircase_impl.cc
+    frequency_sweeper_impl.cc
+    utils.cc)
 
 set(spectre_sources "${spectre_sources}" PARENT_SCOPE)
-if(NOT spectre_sources)
-    MESSAGE(STATUS "No C++ sources... skipping lib/")
-    return()
-endif(NOT spectre_sources)
 
 add_library(gnuradio-spectre SHARED ${spectre_sources})
 target_link_libraries(gnuradio-spectre gnuradio::gnuradio-runtime)
@@ -28,12 +25,6 @@ target_include_directories(gnuradio-spectre
     PUBLIC $<INSTALL_INTERFACE:include>
 )
 set_target_properties(gnuradio-spectre PROPERTIES DEFINE_SYMBOL "gnuradio_spectre_EXPORTS")
-
-if(APPLE)
-    set_target_properties(gnuradio-spectre PROPERTIES
-        INSTALL_NAME_DIR "${CMAKE_INSTALL_PREFIX}/lib"
-    )
-endif(APPLE)
 
 ########################################################################
 # Install built library files

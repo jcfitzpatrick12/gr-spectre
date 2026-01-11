@@ -1,0 +1,56 @@
+id: spectre_frequency_sweeper
+label: Frequency Sweeper
+category: '[spectre]'
+
+templates:
+  imports: from gnuradio import spectre
+  make: spectre.frequency_sweeper(${min_freq}, ${max_freq}, ${freq_hop}, ${dwell_time}, ${sample_rate},  ${retune_cmd_name}, '${input_type}')
+
+parameters:
+  - id: min_freq
+    label: Minimum frequency (Hz)
+    dtype: float
+    default: 90e6
+
+  - id: max_freq
+    label: Maximum frequency (Hz)
+    dtype: float
+    default: 110e6
+
+  - id: freq_hop
+    label: Frequency hop (Hz)
+    dtype: float
+    default: 2e6
+
+  - id: sample_rate
+    label: Sample rate (Sps)
+    dtype: float
+    default: 2e6
+
+  - id: dwell_time
+    label: Dwell time (s)
+    dtype: float
+    default: 0.2
+
+  - id: retune_cmd_name
+    label: Retune command name
+    dtype: string
+    default: "freq"
+
+  - id: input_type
+    label: Input type
+    dtype: enum
+    options: [fc32, fc64, sc8, sc16]
+    default: fc32
+
+inputs:
+  - label: in0
+    domain: stream
+    dtype: ${input_type}
+
+outputs:
+  - domain: message
+    id: retune_command
+    optional: false
+
+file_format: 1

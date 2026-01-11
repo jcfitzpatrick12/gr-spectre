@@ -1,5 +1,5 @@
 /*
- * Copyright 2024 Free Software Foundation, Inc.
+ * Copyright 2026 Free Software Foundation, Inc.
  *
  * This file is part of GNU Radio
  *
@@ -14,7 +14,7 @@
 /* BINDTOOL_GEN_AUTOMATIC(0)                                                       */
 /* BINDTOOL_USE_PYGCCXML(0)                                                        */
 /* BINDTOOL_HEADER_FILE(tagged_staircase.h)                                        */
-/* BINDTOOL_HEADER_FILE_HASH(b3efc11428318a9fc7adc96f0f7d363e)                     */
+/* BINDTOOL_HEADER_FILE_HASH(2d88779c19c20047f5586b7b5fcffa6d)                     */
 /***********************************************************************************/
 
 #include <pybind11/complex.h>
@@ -39,9 +39,9 @@ void bind_tagged_staircase(py::module& m)
         .def(py::init(&tagged_staircase::make),
            py::arg("min_samples_per_step") = 4000,
            py::arg("max_samples_per_step") = 5000,
-           py::arg("freq_step") = 32000,
+           py::arg("hop_freq") = 32000,
            py::arg("step_increment") = 200,
-           py::arg("samp_rate") = 32000,
+           py::arg("sample_rate") = 32000,
            D(tagged_staircase,make)
         )
         

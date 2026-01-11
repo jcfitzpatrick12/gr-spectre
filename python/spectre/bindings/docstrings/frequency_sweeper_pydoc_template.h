@@ -1,5 +1,5 @@
 /*
- * Copyright 2025 Free Software Foundation, Inc.
+ * Copyright 2026 Free Software Foundation, Inc.
  *
  * This file is part of GNU Radio
  *
@@ -16,12 +16,12 @@
 
 
  
- static const char *__doc_gr_spectre_sweep_driver = R"doc()doc";
+ static const char *__doc_gr_spectre_frequency_sweeper = R"doc()doc";
 
 
- static const char *__doc_gr_spectre_sweep_driver_sweep_driver = R"doc()doc";
+ static const char *__doc_gr_spectre_frequency_sweeper_frequency_sweeper = R"doc()doc";
 
 
- static const char *__doc_gr_spectre_sweep_driver_make = R"doc()doc";
+ static const char *__doc_gr_spectre_frequency_sweeper_make = R"doc()doc";
 
   

@@ -4,23 +4,31 @@ category: '[spectre]'
 
 templates:
   imports: from gnuradio import spectre
-  make: spectre.tagged_staircase(${min_samples_per_step}, ${max_samples_per_step}, ${step_increment}, ${samp_rate})
+  make: spectre.tagged_staircase(${min_samples_per_step}, ${max_samples_per_step}, ${hop_freq}, ${step_increment}, ${sample_rate})
 
 parameters:
 - id: min_samples_per_step
   label: Minimum samples per step
   dtype: int
   default: 4000
-- id: max_samples_per_step
+  
+- id: max_samples_per_step 
   label: Maximum samples per step
   dtype: int
   default: 5000
+
+- id: hop_freq
+  label: Frequency hop (Hz)
+  dtype: float
+  default: 32000
+
 - id: step_increment
   label: Step increment
   dtype: int
   default: 200
-- id: samp_rate
-  label: Sample rate [samples/s]
+
+- id: sample_rate
+  label: Sample rate (Sps)
   dtype: int
   default: 32000
 

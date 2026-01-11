@@ -10,9 +10,9 @@ This repository is not intended for direct consumption.
 If you'd like to raise an issue, or want to make a change, please refer to the _Contributing_ section in the [README](https://github.com/jcfitzpatrick12/spectre/blob/main/README.md) for _Spectre_.
 
 ## Blocks
-- _Batched File Sink_: writes complex data streams continuously into batched binary files of a user-determined size, saving appropriate metadata in detached headers.
-- _Sweep Driver_: periodically publishes messages instructing frequency re-tuning for compatible receiver blocks.
-- _Tagged Staircase_: source block used to test _Batched File Sink_ and _Spectre_ frequency sweep modules.
+- Batched File Sink: Writes the input stream to binary files in fixed-length batches.
+- Frequency Sweeper: Periodically retunes compatible receiver blocks over a range of frequencies in fixed increments using message passing.
+- Tagged staircase: Models I/Q samples produced by a receiver whose center frequency is swept over a range of frequencies.
 
 
 
