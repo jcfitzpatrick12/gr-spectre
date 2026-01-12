@@ -114,6 +114,10 @@ batched_file_sink_impl::~batched_file_sink_impl() { close_fstreams(); }
 void batched_file_sink_impl::init()
 {
     set_batch_time();
+    
+    // If the fstreams are open, close them first.
+    close_fstreams();
+    
     open_fstreams();
 
     if (d_is_tagged) {
@@ -180,7 +184,7 @@ void batched_file_sink_impl::close_fstreams()
     if (d_fdata.is_open()) {
         d_fdata.close();
     }
-    if (d_ftags) {
+    if (d_ftags.is_open()) {
         d_ftags.close();
     }
 }
