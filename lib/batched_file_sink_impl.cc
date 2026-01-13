@@ -269,7 +269,7 @@ void batched_file_sink_impl::fill_tag_buffer(int nconsumed_items)
     std::vector<tag_t> tags;
     uint64_t abs_start = d_active_tag.offset + 1;
     uint64_t abs_end = nitems_read(INPUT_PORT) + nconsumed_items;
-    get_tags_in_range(tags, INPUT_PORT, abs_start, abs_end);
+    get_tags_in_range(tags, INPUT_PORT, abs_start, abs_end, d_tag_key);
     size_t num_tags = tags.size();
 
     for (size_t n = 0; n < num_tags; n++) {
