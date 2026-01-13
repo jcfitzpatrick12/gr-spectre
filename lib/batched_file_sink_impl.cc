@@ -16,7 +16,7 @@
 
 namespace {
 
-static constexpr int NUM_DIGITS_MILLISECONDS = 3;
+static constexpr int NUM_DIGITS_MICROSECONDS = 6;
 static constexpr int INPUT_PORT = 0;
 
 int get_num_samples_per_batch(const float batch_size, const float sample_rate)
@@ -32,14 +32,14 @@ std::filesystem::path generate_file_path(const std::string& dir,
                                          const std::string& extension,
                                          const bool group_by_date,
                                          std::tm utc_tm,
-                                         int ms)
+                                         int us)
 {
     // Make the file path, using date-based subdirectories if it's required.
     std::ostringstream buffer;
     std::string fmt = (group_by_date) ? "%Y/%m/%d/" : "";
     buffer << std::put_time(&utc_tm, fmt.data())
            << std::put_time(&utc_tm, "%Y-%m-%dT%H:%M:%S.")
-           << std::setw(NUM_DIGITS_MILLISECONDS) << std::setfill('0') << ms << "Z_" << tag
+           << std::setw(NUM_DIGITS_MICROSECONDS) << std::setfill('0') << us << "Z_" << tag
            << "." << extension;
     return dir / std::filesystem::path(buffer.str());
 }
@@ -114,6 +114,10 @@ batched_file_sink_impl::~batched_file_sink_impl() { close_fstreams(); }
 void batched_file_sink_impl::init()
 {
     set_batch_time();
+    
+    // If the fstreams are open, close them first.
+    close_fstreams();
+    
     open_fstreams();
 
     if (d_is_tagged) {
@@ -140,11 +144,11 @@ void batched_file_sink_impl::set_batch_time()
     std::tm* utc_now = std::gmtime(&now_c);
 
     // Then, extract the millisecond component.
-    milliseconds ms =
-        duration_cast<milliseconds>(now.time_since_epoch() - seconds(now_c));
+    microseconds us =
+        duration_cast<microseconds>(now.time_since_epoch() - seconds(now_c));
 
     d_batch_time.utc_tm = *utc_now;
-    d_batch_time.ms = static_cast<int>(ms.count());
+    d_batch_time.us = static_cast<int>(us.count());
 }
 
 void batched_file_sink_impl::open_fstream(std::ofstream& f, const std::string& extension)
@@ -152,7 +156,7 @@ void batched_file_sink_impl::open_fstream(std::ofstream& f, const std::string& e
     using namespace std::filesystem;
 
     path filename = generate_file_path(
-        d_dir, d_tag, extension, d_group_by_date, d_batch_time.utc_tm, d_batch_time.ms);
+        d_dir, d_tag, extension, d_group_by_date, d_batch_time.utc_tm, d_batch_time.us);
 
     path parent_dir{ filename.parent_path() };
     if (!exists(parent_dir)) {
@@ -180,7 +184,7 @@ void batched_file_sink_impl::close_fstreams()
     if (d_fdata.is_open()) {
         d_fdata.close();
     }
-    if (d_ftags) {
+    if (d_ftags.is_open()) {
         d_ftags.close();
     }
 }
@@ -265,7 +269,7 @@ void batched_file_sink_impl::fill_tag_buffer(int nconsumed_items)
     std::vector<tag_t> tags;
     uint64_t abs_start = d_active_tag.offset + 1;
     uint64_t abs_end = nitems_read(INPUT_PORT) + nconsumed_items;
-    get_tags_in_range(tags, INPUT_PORT, abs_start, abs_end);
+    get_tags_in_range(tags, INPUT_PORT, abs_start, abs_end, d_tag_key);
     size_t num_tags = tags.size();
 
     for (size_t n = 0; n < num_tags; n++) {
